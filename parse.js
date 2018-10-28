@@ -9,15 +9,14 @@ const parse = html => {
   sections.forEach(section => {
     const [titlePart, descriptionPart, , ...meetingParts] = section.split('<tr>\n');
 
-    const [, courseTitle, crn, courseId, sectionId] = /^<a href=".+">(.+) - (\d{5}) - (\w+ \d{4}) - (.+)<\/a>/.exec(titlePart);
+    const [, courseTitle, crn, courseId, sectionId] = /^<a href=".+">(.+) - (\d{5}) - (\w+ \w+) - (.+)<\/a>/.exec(titlePart);
 
-    const scheduleType = /^(.+)\* Schedule Type$/m.exec(descriptionPart)[1];
-    const credits = Number.parseInt(/^\s*(\d\.\d{3}) Credits$/m.exec(descriptionPart)[1]);
+    const credits = Number.parseInt(/(\d\.\d{3}) Credits$/m.exec(descriptionPart)[1]);
 
     const meetings = meetingParts.map(meetingPart => {
       let [type, period, days, where, dateRange, scheduleType, instructors] = meetingPart.split('\n').slice(0, 7)
-        .map(row => /^<td CLASS="dddefault">(.+)<\/td>$/.exec(row)[1]);
-      instructors = instructors.replace(/<\/?[^>]+(>|$)/g, '').replace(/ +/g, ' ').split(', ');
+        .map(row => row.replace(/<\/?[^>]+(>|$)/g, ''));
+      instructors = instructors.replace(/ +/g, ' ').split(', ');
 
       return {
         period,
@@ -36,7 +35,6 @@ const parse = html => {
     courses[courseId].sections[sectionId] = {
       crn,
       meetings,
-      scheduleType,
       credits,
     };
   });

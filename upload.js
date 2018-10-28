@@ -8,21 +8,21 @@ octokit.authenticate({
   token: GITHUB_TOKEN,
 });
 
+const owner = 'parkjs814';
+const repo = 'gt-schedule-crawler';
 const branch = 'gh-pages';
-const fileInfo = {
-  owner: 'parkjs814',
-  repo: 'gt-schedule-crawler',
-  path: 'courses.json',
-};
+const path = 'courses.json';
 
 const upload = courses =>
-  octokit.repos.getContent({ ...fileInfo, ref: branch })
+  octokit.repos.getContent({ owner, repo, path: '', ref: branch })
     .then(response => octokit.repos.updateFile({
-      ...fileInfo,
-      branch,
-      sha: response.data.sha,
-      message: 'Update courses.json',
+      owner,
+      repo,
+      path,
+      message: `Update ${path}`,
       content: Buffer.from(JSON.stringify(courses)).toString('base64'),
+      sha: response.data.find(file => file.path === path).sha,
+      branch,
     }));
 
 module.exports = upload;
