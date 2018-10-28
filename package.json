@@ -1,0 +1,12 @@
+{
+  "name": "gt-schedule-crawler",
+  "version": "1.0.0",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "@octokit/rest": "^15.15.1",
+    "axios": "^0.18.0",
+    "cheerio": "^1.0.0-rc.2"
+  }
+}
