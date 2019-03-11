@@ -1,5 +1,6 @@
 const parse = html => {
   const courses = {};
+  let termDateRange = null;
 
   const startIndex = html.indexOf('<caption class="captiontext">Sections Found</caption>');
   const endIndex = html.lastIndexOf('<table  CLASS="datadisplaytable" summary="This is for formatting of the bottom links." WIDTH="50%">');
@@ -17,6 +18,7 @@ const parse = html => {
       let [type, period, days, where, dateRange, scheduleType, instructors] = meetingPart.split('\n').slice(0, 7)
         .map(row => row.replace(/<\/?[^>]+(>|$)/g, ''));
       instructors = instructors.replace(/ +/g, ' ').split(', ');
+      if (!termDateRange && dateRange) termDateRange = dateRange;
 
       return {
         period,
@@ -39,7 +41,7 @@ const parse = html => {
     };
   });
 
-  return courses;
+  return { courses, dateRange: termDateRange };
 };
 
 module.exports = parse;

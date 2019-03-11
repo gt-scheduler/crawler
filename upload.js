@@ -35,18 +35,18 @@ const uploadFile = (path, json, files) => {
     }).then(() => true);
 };
 
-const upload = (term_in, courses) =>
+const upload = (term, termData) =>
   octokit.repos.getContent({ owner, repo, path: '', ref: branch })
     .then(response => {
       const files = response.data;
-      const path = `${term_in}.json`;
-      return uploadFile(path, courses, files).then(created => {
+      const path = `${term}.json`;
+      return uploadFile(path, termData, files).then(created => {
         if (created) {
-          const term_ins = files.map(file => file.path.split('.')[0]).filter(filename => /\d{6}/.test(filename));
-          term_ins.push(term_in);
-          term_ins.sort();
-          console.log(`Updating 'term_ins.json' ...`);
-          return uploadFile('term_ins.json', term_ins, files);
+          const terms = files.map(file => file.path.split('.')[0]).filter(filename => /\d{6}/.test(filename));
+          terms.push(term);
+          terms.sort();
+          console.log(`Updating 'terms.json' ...`);
+          return uploadFile('terms.json', terms, files);
         }
       });
     });

@@ -6,17 +6,17 @@ const parse = require('./parse');
 const upload = require('./upload');
 
 console.info('Listing ...');
-list().then(terms_in => {
-  return Promise.mapSeries(terms_in.slice(0, 2), term_in => {
-    console.info(`Downloading ${term_in} ...`);
-    return download(term_in)
+list().then(terms => {
+  return Promise.mapSeries(terms.slice(0, 2), term => {
+    console.info(`Downloading ${term} ...`);
+    return download(term)
       .then(html => {
         console.info('Parsing ...');
         return parse(html);
       })
-      .then(courses => {
+      .then(termData => {
         console.info('Uploading ...');
-        return upload(term_in, courses);
+        return upload(term, termData);
       });
   });
 }).catch(console.error);
