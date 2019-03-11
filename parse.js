@@ -1,6 +1,6 @@
 const parse = html => {
   const courses = {};
-  let termDateRange = null;
+  let dateRanges = [];
 
   const startIndex = html.indexOf('<caption class="captiontext">Sections Found</caption>');
   const endIndex = html.lastIndexOf('<table  CLASS="datadisplaytable" summary="This is for formatting of the bottom links." WIDTH="50%">');
@@ -18,30 +18,37 @@ const parse = html => {
       let [type, period, days, where, dateRange, scheduleType, instructors] = meetingPart.split('\n').slice(0, 7)
         .map(row => row.replace(/<\/?[^>]+(>|$)/g, ''));
       instructors = instructors.replace(/ +/g, ' ').split(', ');
-      if (!termDateRange && dateRange) termDateRange = dateRange;
+      let dateRangeIndex = dateRanges.indexOf(dateRange);
+      if (!~dateRangeIndex) {
+        dateRanges.push(dateRange);
+        dateRangeIndex = dateRanges.length - 1;
+      }
 
-      return {
+      return [
         period,
         days,
         where,
         instructors,
-      };
+        dateRangeIndex,
+      ];
     });
 
     if (!(courseId in courses)) {
-      courses[courseId] = {
-        title: courseTitle,
-        sections: {},
-      };
+      const title = courseTitle;
+      const sections = {};
+      courses[courseId] = [
+        title,
+        sections,
+      ];
     }
-    courses[courseId].sections[sectionId] = {
+    courses[courseId][1][sectionId] = [
       crn,
       meetings,
       credits,
-    };
+    ];
   });
 
-  return { courses, dateRange: termDateRange };
+  return { courses, dateRanges };
 };
 
 module.exports = parse;
