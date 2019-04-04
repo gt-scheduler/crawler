@@ -1,6 +1,7 @@
 const parse = html => {
   const courses = {};
   let dateRanges = [];
+  let scheduleTypes = [];
 
   const startIndex = html.indexOf('<caption class="captiontext">Sections Found</caption>');
   const endIndex = html.lastIndexOf('<table  CLASS="datadisplaytable" summary="This is for formatting of the bottom links." WIDTH="50%">');
@@ -23,6 +24,11 @@ const parse = html => {
         dateRanges.push(dateRange);
         dateRangeIndex = dateRanges.length - 1;
       }
+      let scheduleTypeIndex = scheduleTypes.indexOf(scheduleType);
+      if (!~scheduleTypeIndex) {
+        scheduleTypes.push(scheduleType);
+        scheduleTypeIndex = scheduleTypes.length - 1;
+      }
 
       return [
         period,
@@ -30,6 +36,7 @@ const parse = html => {
         where,
         instructors,
         dateRangeIndex,
+        scheduleTypeIndex,
       ];
     });
 
@@ -48,7 +55,7 @@ const parse = html => {
     ];
   });
 
-  return { courses, dateRanges };
+  return { courses, dateRanges, scheduleTypes };
 };
 
 module.exports = parse;
