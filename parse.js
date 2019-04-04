@@ -2,6 +2,7 @@ const parse = html => {
   const courses = {};
   let dateRanges = [];
   let scheduleTypes = [];
+  let campuses = [];
 
   const startIndex = html.indexOf('<caption class="captiontext">Sections Found</caption>');
   const endIndex = html.lastIndexOf('<table  CLASS="datadisplaytable" summary="This is for formatting of the bottom links." WIDTH="50%">');
@@ -13,7 +14,19 @@ const parse = html => {
 
     const [, courseTitle, crn, courseId, sectionId] = /^<a href=".+">(.+) - (\d{5}) - (\w+ \w+) - (.+)<\/a>/.exec(titlePart);
 
-    const credits = Number.parseInt(/(\d\.\d{3}) Credits$/m.exec(descriptionPart)[1]);
+    const credits = Number.parseInt(/(\d+\.\d{3}) Credits$/m.exec(descriptionPart)[1]);
+    const scheduleType = /^(.+) Schedule Type$/m.exec(descriptionPart)[1];
+    const campus = /^(.+) Campus$/m.exec(descriptionPart)[1];
+    let scheduleTypeIndex = scheduleTypes.indexOf(scheduleType);
+    if (!~scheduleTypeIndex) {
+      scheduleTypes.push(scheduleType);
+      scheduleTypeIndex = scheduleTypes.length - 1;
+    }
+    let campusIndex = campuses.indexOf(campus);
+    if (!~campusIndex) {
+      campuses.push(campus);
+      campusIndex = campuses.length - 1;
+    }
 
     const meetings = meetingParts.map(meetingPart => {
       let [type, period, days, where, dateRange, scheduleType, instructors] = meetingPart.split('\n').slice(0, 7)
@@ -24,11 +37,6 @@ const parse = html => {
         dateRanges.push(dateRange);
         dateRangeIndex = dateRanges.length - 1;
       }
-      let scheduleTypeIndex = scheduleTypes.indexOf(scheduleType);
-      if (!~scheduleTypeIndex) {
-        scheduleTypes.push(scheduleType);
-        scheduleTypeIndex = scheduleTypes.length - 1;
-      }
 
       return [
         period,
@@ -36,7 +44,6 @@ const parse = html => {
         where,
         instructors,
         dateRangeIndex,
-        scheduleTypeIndex,
       ];
     });
 
@@ -52,10 +59,12 @@ const parse = html => {
       crn,
       meetings,
       credits,
+      scheduleTypeIndex,
+      campusIndex,
     ];
   });
 
-  return { courses, dateRanges, scheduleTypes };
+  return { courses, dateRanges, scheduleTypes, campuses };
 };
 
 module.exports = parse;
