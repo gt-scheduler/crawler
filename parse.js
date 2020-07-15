@@ -1,8 +1,23 @@
+const match = (text, regexp) => {
+  const results = regexp.exec(text);
+  return results && results[1];
+};
+
+const cache = (array, value) => {
+  let index = array.indexOf(value);
+  if (!~index) {
+    array.push(value);
+    index = array.length - 1;
+  }
+  return index;
+};
+
 const parse = html => {
   const courses = {};
   let dateRanges = [];
   let scheduleTypes = [];
   let campuses = [];
+  let instructionalMethods = [];
 
   const startIndex = html.indexOf('<caption class="captiontext">Sections Found</caption>');
   const endIndex = html.lastIndexOf('<table  CLASS="datadisplaytable" summary="This is for formatting of the bottom links." WIDTH="50%">');
@@ -14,19 +29,14 @@ const parse = html => {
 
     const [, courseTitle, crn, courseId, sectionId] = /^<a href=".+">(.+) - (\d{5}) - (\w+ \w+) - (.+)<\/a>/.exec(titlePart);
 
-    const credits = Number.parseInt(/(\d+\.\d{3}) Credits$/m.exec(descriptionPart)[1]);
-    const scheduleType = /^(.+) Schedule Type$/m.exec(descriptionPart)[1];
-    const campus = /^(.+) Campus$/m.exec(descriptionPart)[1];
-    let scheduleTypeIndex = scheduleTypes.indexOf(scheduleType);
-    if (!~scheduleTypeIndex) {
-      scheduleTypes.push(scheduleType);
-      scheduleTypeIndex = scheduleTypes.length - 1;
-    }
-    let campusIndex = campuses.indexOf(campus);
-    if (!~campusIndex) {
-      campuses.push(campus);
-      campusIndex = campuses.length - 1;
-    }
+    const credits = Number.parseInt(match(descriptionPart, /(\d+\.\d{3}) Credits$/m));
+    const scheduleType = match(descriptionPart, /^(.+) Schedule Type$/m);
+    const campus = match(descriptionPart, /^(.+) Campus$/m);
+    const instructionalMethod = match(descriptionPart, /^(.+) Instructional Method$/m);
+
+    const scheduleTypeIndex = cache(scheduleTypes, scheduleType);
+    const campusIndex = cache(campuses, campus);
+    const instructionalMethodIndex = cache(instructionalMethods, instructionalMethod);
 
     const meetings = meetingParts.map(meetingPart => {
       let [type, period, days, where, dateRange, scheduleType, instructors] = meetingPart.split('\n').slice(0, 7)
@@ -61,10 +71,11 @@ const parse = html => {
       credits,
       scheduleTypeIndex,
       campusIndex,
+      instructionalMethodIndex,
     ];
   });
 
-  return { courses, dateRanges, scheduleTypes, campuses };
+  return { courses, dateRanges, scheduleTypes, campuses, instructionalMethods };
 };
 
 module.exports = parse;
