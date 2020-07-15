@@ -8,7 +8,7 @@ octokit.authenticate({
   token: GITHUB_TOKEN,
 });
 
-const owner = 'parkjs814';
+const owner = '64json';
 const repo = 'gt-schedule-crawler';
 const branch = 'gh-pages';
 
