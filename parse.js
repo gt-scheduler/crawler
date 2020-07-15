@@ -14,10 +14,11 @@ const cache = (array, value) => {
 
 const parse = html => {
   const courses = {};
-  let dateRanges = [];
-  let scheduleTypes = [];
-  let campuses = [];
-  let instructionalMethods = [];
+  const dateRanges = [];
+  const scheduleTypes = [];
+  const campuses = [];
+  const instructionalMethods = [];
+  const updatedAt = new Date();
 
   const startIndex = html.indexOf('<caption class="captiontext">Sections Found</caption>');
   const endIndex = html.lastIndexOf('<table  CLASS="datadisplaytable" summary="This is for formatting of the bottom links." WIDTH="50%">');
@@ -42,11 +43,7 @@ const parse = html => {
       let [type, period, days, where, dateRange, scheduleType, instructors] = meetingPart.split('\n').slice(0, 7)
         .map(row => row.replace(/<\/?[^>]+(>|$)/g, ''));
       instructors = instructors.replace(/ +/g, ' ').split(', ');
-      let dateRangeIndex = dateRanges.indexOf(dateRange);
-      if (!~dateRangeIndex) {
-        dateRanges.push(dateRange);
-        dateRangeIndex = dateRanges.length - 1;
-      }
+      const dateRangeIndex = cache(dateRanges, dateRange);
 
       return [
         period,
@@ -75,7 +72,7 @@ const parse = html => {
     ];
   });
 
-  return { courses, dateRanges, scheduleTypes, campuses, instructionalMethods };
+  return { courses, dateRanges, scheduleTypes, campuses, instructionalMethods, updatedAt };
 };
 
 module.exports = parse;
