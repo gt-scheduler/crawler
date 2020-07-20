@@ -19,7 +19,7 @@ jobs:
         run: yarn install --frozen-lockfile
 
       - name: Build
-        run: CI=false yarn build
+        run: yarn start
 
       - name: Deploy
         uses: JamesIves/github-pages-deploy-action@releases/v3
