@@ -18,10 +18,10 @@ jobs:
       - name: Install
         run: yarn install --frozen-lockfile
 
-      - name: Build
+      - name: Crawling
         run: yarn start
 
-      - name: Deploy
+      - name: Upload
         uses: JamesIves/github-pages-deploy-action@releases/v3
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
