@@ -2,7 +2,7 @@
   "name": "gt-schedule-crawler",
   "version": "1.0.0",
   "scripts": {
-    "start": "node index.js"
+    "start": "node src"
   },
   "dependencies": {
     "@octokit/rest": "^15.15.1",
