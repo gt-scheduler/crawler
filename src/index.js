@@ -7,7 +7,7 @@ const write = require('./write');
 
 console.info('Listing ...');
 list().then(terms => {
-  return Promise.mapSeries(terms, term => {
+  return Promise.mapSeries(terms.slice(0, 2), term => {
     console.info(`Downloading ${term} ...`);
     return download(term)
       .then(html => {
