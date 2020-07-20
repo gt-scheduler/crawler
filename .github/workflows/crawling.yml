@@ -1,4 +1,4 @@
-name: Deploy
+name: Crawling
 on:
   push:
     branches:
@@ -7,7 +7,7 @@ on:
     - cron: "0 * * * *"
 
 jobs:
-  build-and-deploy:
+  crawling:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
