@@ -2,10 +2,14 @@
   "name": "gt-schedule-crawler",
   "version": "1.0.0",
   "scripts": {
-    "start": "node src"
+    "start": "ts-node src"
   },
   "dependencies": {
-    "axios": "^0.18.1",
-    "bluebird": "latest"
+    "axios": "^0.18.1"
+  },
+  "devDependencies": {
+    "@types/node": "^14.0.24",
+    "ts-node": "^8.10.2",
+    "typescript": "^3.9.7"
   }
 }

@@ -1,29 +1,27 @@
-const match = (text, regexp) => {
-  const results = regexp.exec(text);
-  return results && results[1];
-};
+import { cache, extract, match } from '../utils';
 
-const cache = (array, value) => {
-  let index = array.indexOf(value);
-  if (!~index) {
-    array.push(value);
-    index = array.length - 1;
-  }
-  return index;
-};
+export interface TermData {
+  courses: Record<string, Course>;
+  caches: Caches;
+  updatedAt: Date;
+}
 
-const map = (text, regexp, callback) => {
-  const array = [];
-  let results;
-  while (results = regexp.exec(text)) {
-    array.push(callback(results));
-  }
-  return array;
-};
+export interface Caches {
+  periods: string[];
+  dateRanges: string[];
+  scheduleTypes: string[];
+  campuses: string[];
+  attributes: string[];
+  gradeBases: string[];
+}
 
-const parse = html => {
-  const courses = {};
-  const caches = {
+export type Course = [string, Record<string, Section>];
+export type Section = [string, Meeting[], number, number, number, number[], number];
+export type Meeting = [number, string, string, string[], number];
+
+export function parse(html: string): TermData {
+  const courses: Record<string, Course> = {};
+  const caches: Caches = {
     periods: [],
     dateRanges: [],
     scheduleTypes: [],
@@ -43,17 +41,15 @@ const parse = html => {
 
     const [, courseTitle, crn, courseId, sectionId] = /^<a href=".+">(.+) - (\d{5}) - (\w+ \w+) - (.+)<\/a>/.exec(titlePart);
 
-    const fields = map(descriptionPart, /^<SPAN class="fieldlabeltext">(.+): <\/SPAN>(.+)$/mg, results => {
+    const fields: Record<string, string | undefined> = extract(descriptionPart, /^<SPAN class="fieldlabeltext">(.+): <\/SPAN>(.+)$/mg, results => {
       const [, key, value] = results;
       return { key, value };
     }).reduce((acc, { key, value }) => ({ ...acc, [key]: value }), {});
     const attributesKey = 'Attributes';
-    const attributes = attributesKey in fields ?
-      fields[attributesKey].split(',').map(attribute => attribute.trim()) :
-      [];
-    const gradeBasis = fields['Grade Basis'];
+    const attributes = fields[attributesKey]?.split(',').map(attribute => attribute.trim()) ?? [];
+    const gradeBasis = fields['Grade Basis'] ?? null;
 
-    const credits = Number.parseInt(match(descriptionPart, /(\d+\.\d{3}) Credits$/m));
+    const credits = Number(match(descriptionPart, /(\d+\.\d{3}) Credits$/m));
     const scheduleType = match(descriptionPart, /^(.+) Schedule Type$/m);
     const campus = match(descriptionPart, /^(.+) Campus$/m);
 
@@ -62,10 +58,10 @@ const parse = html => {
     const attributeIndices = attributes.map(attribute => cache(caches.attributes, attribute));
     const gradeBasisIndex = cache(caches.gradeBases, gradeBasis);
 
-    const meetings = meetingParts.map(meetingPart => {
-      let [type, period, days, where, dateRange, scheduleType, instructors] = meetingPart.split('\n').slice(0, 7)
+    const meetings = meetingParts.map<Meeting>(meetingPart => {
+      let [type, period, days, where, dateRange, scheduleType, instructorsString] = meetingPart.split('\n').slice(0, 7)
         .map(row => row.replace(/<\/?[^>]+(>|$)/g, ''));
-      instructors = instructors.replace(/ +/g, ' ').split(', ');
+      const instructors = instructorsString.replace(/ +/g, ' ').split(', ');
       const periodIndex = cache(caches.periods, period);
       const dateRangeIndex = cache(caches.dateRanges, dateRange);
 
@@ -80,7 +76,7 @@ const parse = html => {
 
     if (!(courseId in courses)) {
       const title = courseTitle;
-      const sections = {};
+      const sections: Record<string, Section> = {};
       courses[courseId] = [
         title,
         sections,
@@ -98,6 +94,4 @@ const parse = html => {
   });
 
   return { courses, caches, updatedAt };
-};
-
-module.exports = parse;
+}

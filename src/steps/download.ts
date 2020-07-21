@@ -1,8 +1,16 @@
-const axios = require('axios');
+import axios from 'axios';
 
-const concatParams = params => Object.entries(params).map(([key, value]) => `${key}=${encodeURIComponent(value)}`).join('&');
+export interface FetchOptions {
+  subject?: string;
+  course?: string;
+  title?: string;
+}
 
-const download = (term, options = {}) => {
+function concatParams(params: Record<string, string>) {
+  return Object.entries(params).map(([key, value]) => `${key}=${encodeURIComponent(value)}`).join('&');
+}
+
+export function download(term: string, options: FetchOptions = {}) {
   const {
     subject = '',
     course = '',
@@ -39,10 +47,8 @@ const download = (term, options = {}) => {
     end_mi: '0',
     end_ap: 'a',
   };
-  return axios.post(
+  return axios.post<string>(
     'https://oscar.gatech.edu/pls/bprod/bwckschd.p_get_crse_unsec',
     [dummyParams, params].map(concatParams).join('&'),
   ).then(res => res.data);
-};
-
-module.exports = download;
+}
