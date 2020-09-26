@@ -8,7 +8,8 @@ import { cache, extract, match } from '../utils';
 export interface TermData {
   /**
    * Contains information about each class;
-   * this makes up the vast bulk of the resultant JSON
+   * this makes up the vast bulk of the resultant JSON.
+   * The course IDs are the keys (`"ACCT 2101"`, `"CS 2340"`, etc.)
    */
   courses: Record<string, Course>;
   /**
