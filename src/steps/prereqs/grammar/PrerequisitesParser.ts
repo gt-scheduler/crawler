@@ -33,32 +33,29 @@ export class PrerequisitesParser extends Parser {
 	public static readonly OPARENS = 3;
 	public static readonly CPARENS = 4;
 	public static readonly GRADE_LETTER = 5;
-	public static readonly COURSE_NUMBER = 6;
-	public static readonly COURSE_SUBJECT = 7;
-	public static readonly COURSE_PREFIX = 8;
-	public static readonly GRADE_PREFIX = 9;
-	public static readonly SPACE = 10;
+	public static readonly COURSE_PREFIX = 6;
+	public static readonly GRADE_PREFIX = 7;
+	public static readonly TEST_NAME = 8;
+	public static readonly COURSE_NUMBER = 9;
+	public static readonly COURSE_SUBJECT = 10;
+	public static readonly SPACE = 11;
 	public static readonly RULE_parse = 0;
 	public static readonly RULE_expression = 1;
 	public static readonly RULE_term = 2;
 	public static readonly RULE_atom = 3;
 	public static readonly RULE_course = 4;
-	public static readonly RULE_subject = 5;
-	public static readonly RULE_number = 6;
-	public static readonly RULE_grade = 7;
+	public static readonly RULE_test = 5;
 	// tslint:disable:no-trailing-whitespace
 	public static readonly ruleNames: string[] = [
-		"parse", "expression", "term", "atom", "course", "subject", "number", 
-		"grade",
+		"parse", "expression", "term", "atom", "course", "test",
 	];
 
 	private static readonly _LITERAL_NAMES: Array<string | undefined> = [
-		undefined, "'and'", "'or'", "'('", "')'", undefined, undefined, undefined, 
-		"'Undergraduate Semester level'", "'Minimum Grade of'",
+		undefined, "'and'", "'or'", "'('", "')'", undefined, undefined, "'Minimum Grade of'",
 	];
 	private static readonly _SYMBOLIC_NAMES: Array<string | undefined> = [
-		undefined, "AND", "OR", "OPARENS", "CPARENS", "GRADE_LETTER", "COURSE_NUMBER", 
-		"COURSE_SUBJECT", "COURSE_PREFIX", "GRADE_PREFIX", "SPACE",
+		undefined, "AND", "OR", "OPARENS", "CPARENS", "GRADE_LETTER", "COURSE_PREFIX", 
+		"GRADE_PREFIX", "TEST_NAME", "COURSE_NUMBER", "COURSE_SUBJECT", "SPACE",
 	];
 	public static readonly VOCABULARY: Vocabulary = new VocabularyImpl(PrerequisitesParser._LITERAL_NAMES, PrerequisitesParser._SYMBOLIC_NAMES, []);
 
@@ -87,13 +84,13 @@ export class PrerequisitesParser extends Parser {
 		let _localctx: ParseContext = new ParseContext(this._ctx, this.state);
 		this.enterRule(_localctx, 0, PrerequisitesParser.RULE_parse);
 		try {
-			this.state = 19;
+			this.state = 15;
 			this._errHandler.sync(this);
 			switch ( this.interpreter.adaptivePredict(this._input, 0, this._ctx) ) {
 			case 1:
 				this.enterOuterAlt(_localctx, 1);
 				{
-				this.state = 16;
+				this.state = 12;
 				this.expression();
 				}
 				break;
@@ -101,7 +98,7 @@ export class PrerequisitesParser extends Parser {
 			case 2:
 				this.enterOuterAlt(_localctx, 2);
 				{
-				this.state = 17;
+				this.state = 13;
 				this.atom();
 				}
 				break;
@@ -109,7 +106,7 @@ export class PrerequisitesParser extends Parser {
 			case 3:
 				this.enterOuterAlt(_localctx, 3);
 				{
-				this.state = 18;
+				this.state = 14;
 				this.match(PrerequisitesParser.EOF);
 				}
 				break;
@@ -137,21 +134,21 @@ export class PrerequisitesParser extends Parser {
 		try {
 			this.enterOuterAlt(_localctx, 1);
 			{
-			this.state = 21;
+			this.state = 17;
 			_localctx._left = this.term();
-			this.state = 26;
+			this.state = 22;
 			this._errHandler.sync(this);
 			_la = this._input.LA(1);
 			while (_la === PrerequisitesParser.OR) {
 				{
 				{
-				this.state = 22;
+				this.state = 18;
 				this.match(PrerequisitesParser.OR);
-				this.state = 23;
+				this.state = 19;
 				_localctx._right = this.term();
 				}
 				}
-				this.state = 28;
+				this.state = 24;
 				this._errHandler.sync(this);
 				_la = this._input.LA(1);
 			}
@@ -179,21 +176,21 @@ export class PrerequisitesParser extends Parser {
 		try {
 			this.enterOuterAlt(_localctx, 1);
 			{
-			this.state = 29;
+			this.state = 25;
 			_localctx._left = this.atom();
-			this.state = 34;
+			this.state = 30;
 			this._errHandler.sync(this);
 			_la = this._input.LA(1);
 			while (_la === PrerequisitesParser.AND) {
 				{
 				{
-				this.state = 30;
+				this.state = 26;
 				this.match(PrerequisitesParser.AND);
-				this.state = 31;
+				this.state = 27;
 				_localctx._right = this.atom();
 				}
 				}
-				this.state = 36;
+				this.state = 32;
 				this._errHandler.sync(this);
 				_la = this._input.LA(1);
 			}
@@ -218,25 +215,33 @@ export class PrerequisitesParser extends Parser {
 		let _localctx: AtomContext = new AtomContext(this._ctx, this.state);
 		this.enterRule(_localctx, 6, PrerequisitesParser.RULE_atom);
 		try {
-			this.state = 42;
+			this.state = 39;
 			this._errHandler.sync(this);
 			switch (this._input.LA(1)) {
 			case PrerequisitesParser.COURSE_PREFIX:
+			case PrerequisitesParser.COURSE_SUBJECT:
 				this.enterOuterAlt(_localctx, 1);
 				{
-				this.state = 37;
+				this.state = 33;
 				this.course();
 				}
 				break;
-			case PrerequisitesParser.OPARENS:
+			case PrerequisitesParser.TEST_NAME:
 				this.enterOuterAlt(_localctx, 2);
 				{
+				this.state = 34;
+				this.test();
+				}
+				break;
+			case PrerequisitesParser.OPARENS:
+				this.enterOuterAlt(_localctx, 3);
 				{
-				this.state = 38;
+				{
+				this.state = 35;
 				this.match(PrerequisitesParser.OPARENS);
-				this.state = 39;
+				this.state = 36;
 				this.expression();
-				this.state = 40;
+				this.state = 37;
 				this.match(PrerequisitesParser.CPARENS);
 				}
 				}
@@ -263,19 +268,36 @@ export class PrerequisitesParser extends Parser {
 	public course(): CourseContext {
 		let _localctx: CourseContext = new CourseContext(this._ctx, this.state);
 		this.enterRule(_localctx, 8, PrerequisitesParser.RULE_course);
+		let _la: number;
 		try {
 			this.enterOuterAlt(_localctx, 1);
 			{
+			this.state = 42;
+			this._errHandler.sync(this);
+			_la = this._input.LA(1);
+			if (_la === PrerequisitesParser.COURSE_PREFIX) {
+				{
+				this.state = 41;
+				this.match(PrerequisitesParser.COURSE_PREFIX);
+				}
+			}
+
 			this.state = 44;
-			this.match(PrerequisitesParser.COURSE_PREFIX);
+			_localctx._subject = this.match(PrerequisitesParser.COURSE_SUBJECT);
 			this.state = 45;
-			this.subject();
-			this.state = 46;
-			this.number();
-			this.state = 47;
-			this.match(PrerequisitesParser.GRADE_PREFIX);
+			_localctx._number = this.match(PrerequisitesParser.COURSE_NUMBER);
 			this.state = 48;
-			this.grade();
+			this._errHandler.sync(this);
+			_la = this._input.LA(1);
+			if (_la === PrerequisitesParser.GRADE_PREFIX) {
+				{
+				this.state = 46;
+				this.match(PrerequisitesParser.GRADE_PREFIX);
+				this.state = 47;
+				_localctx._grade = this.match(PrerequisitesParser.GRADE_LETTER);
+				}
+			}
+
 			}
 		}
 		catch (re) {
@@ -293,64 +315,16 @@ export class PrerequisitesParser extends Parser {
 		return _localctx;
 	}
 	// @RuleVersion(0)
-	public subject(): SubjectContext {
-		let _localctx: SubjectContext = new SubjectContext(this._ctx, this.state);
-		this.enterRule(_localctx, 10, PrerequisitesParser.RULE_subject);
+	public test(): TestContext {
+		let _localctx: TestContext = new TestContext(this._ctx, this.state);
+		this.enterRule(_localctx, 10, PrerequisitesParser.RULE_test);
 		try {
 			this.enterOuterAlt(_localctx, 1);
 			{
 			this.state = 50;
-			this.match(PrerequisitesParser.COURSE_SUBJECT);
-			}
-		}
-		catch (re) {
-			if (re instanceof RecognitionException) {
-				_localctx.exception = re;
-				this._errHandler.reportError(this, re);
-				this._errHandler.recover(this, re);
-			} else {
-				throw re;
-			}
-		}
-		finally {
-			this.exitRule();
-		}
-		return _localctx;
-	}
-	// @RuleVersion(0)
-	public number(): NumberContext {
-		let _localctx: NumberContext = new NumberContext(this._ctx, this.state);
-		this.enterRule(_localctx, 12, PrerequisitesParser.RULE_number);
-		try {
-			this.enterOuterAlt(_localctx, 1);
-			{
-			this.state = 52;
-			this.match(PrerequisitesParser.COURSE_NUMBER);
-			}
-		}
-		catch (re) {
-			if (re instanceof RecognitionException) {
-				_localctx.exception = re;
-				this._errHandler.reportError(this, re);
-				this._errHandler.recover(this, re);
-			} else {
-				throw re;
-			}
-		}
-		finally {
-			this.exitRule();
-		}
-		return _localctx;
-	}
-	// @RuleVersion(0)
-	public grade(): GradeContext {
-		let _localctx: GradeContext = new GradeContext(this._ctx, this.state);
-		this.enterRule(_localctx, 14, PrerequisitesParser.RULE_grade);
-		try {
-			this.enterOuterAlt(_localctx, 1);
-			{
-			this.state = 54;
-			this.match(PrerequisitesParser.GRADE_LETTER);
+			_localctx._name = this.match(PrerequisitesParser.TEST_NAME);
+			this.state = 51;
+			_localctx._score = this.match(PrerequisitesParser.COURSE_NUMBER);
 			}
 		}
 		catch (re) {
@@ -369,30 +343,30 @@ export class PrerequisitesParser extends Parser {
 	}
 
 	public static readonly _serializedATN: string =
-		"\x03\uC91D\uCABA\u058D\uAFBA\u4F53\u0607\uEA8B\uC241\x03\f;\x04\x02\t" +
+		"\x03\uC91D\uCABA\u058D\uAFBA\u4F53\u0607\uEA8B\uC241\x03\r8\x04\x02\t" +
 		"\x02\x04\x03\t\x03\x04\x04\t\x04\x04\x05\t\x05\x04\x06\t\x06\x04\x07\t" +
-		"\x07\x04\b\t\b\x04\t\t\t\x03\x02\x03\x02\x03\x02\x05\x02\x16\n\x02\x03" +
-		"\x03\x03\x03\x03\x03\x07\x03\x1B\n\x03\f\x03\x0E\x03\x1E\v\x03\x03\x04" +
-		"\x03\x04\x03\x04\x07\x04#\n\x04\f\x04\x0E\x04&\v\x04\x03\x05\x03\x05\x03" +
-		"\x05\x03\x05\x03\x05\x05\x05-\n\x05\x03\x06\x03\x06\x03\x06\x03\x06\x03" +
-		"\x06\x03\x06\x03\x07\x03\x07\x03\b\x03\b\x03\t\x03\t\x03\t\x02\x02\x02" +
-		"\n\x02\x02\x04\x02\x06\x02\b\x02\n\x02\f\x02\x0E\x02\x10\x02\x02\x02\x02" +
-		"7\x02\x15\x03\x02\x02\x02\x04\x17\x03\x02\x02\x02\x06\x1F\x03\x02\x02" +
-		"\x02\b,\x03\x02\x02\x02\n.\x03\x02\x02\x02\f4\x03\x02\x02\x02\x0E6\x03" +
-		"\x02\x02\x02\x108\x03\x02\x02\x02\x12\x16\x05\x04\x03\x02\x13\x16\x05" +
-		"\b\x05\x02\x14\x16\x07\x02\x02\x03\x15\x12\x03\x02\x02\x02\x15\x13\x03" +
-		"\x02\x02\x02\x15\x14\x03\x02\x02\x02\x16\x03\x03\x02\x02\x02\x17\x1C\x05" +
-		"\x06\x04\x02\x18\x19\x07\x04\x02\x02\x19\x1B\x05\x06\x04\x02\x1A\x18\x03" +
-		"\x02\x02\x02\x1B\x1E\x03\x02\x02\x02\x1C\x1A\x03\x02\x02\x02\x1C\x1D\x03" +
-		"\x02\x02\x02\x1D\x05\x03\x02\x02\x02\x1E\x1C\x03\x02\x02\x02\x1F$\x05" +
-		"\b\x05\x02 !\x07\x03\x02\x02!#\x05\b\x05\x02\" \x03\x02\x02\x02#&\x03" +
-		"\x02\x02\x02$\"\x03\x02\x02\x02$%\x03\x02\x02\x02%\x07\x03\x02\x02\x02" +
-		"&$\x03\x02\x02\x02\'-\x05\n\x06\x02()\x07\x05\x02\x02)*\x05\x04\x03\x02" +
-		"*+\x07\x06\x02\x02+-\x03\x02\x02\x02,\'\x03\x02\x02\x02,(\x03\x02\x02" +
-		"\x02-\t\x03\x02\x02\x02./\x07\n\x02\x02/0\x05\f\x07\x0201\x05\x0E\b\x02" +
-		"12\x07\v\x02\x0223\x05\x10\t\x023\v\x03\x02\x02\x0245\x07\t\x02\x025\r" +
-		"\x03\x02\x02\x0267\x07\b\x02\x027\x0F\x03\x02\x02\x0289\x07\x07\x02\x02" +
-		"9\x11\x03\x02\x02\x02\x06\x15\x1C$,";
+		"\x07\x03\x02\x03\x02\x03\x02\x05\x02\x12\n\x02\x03\x03\x03\x03\x03\x03" +
+		"\x07\x03\x17\n\x03\f\x03\x0E\x03\x1A\v\x03\x03\x04\x03\x04\x03\x04\x07" +
+		"\x04\x1F\n\x04\f\x04\x0E\x04\"\v\x04\x03\x05\x03\x05\x03\x05\x03\x05\x03" +
+		"\x05\x03\x05\x05\x05*\n\x05\x03\x06\x05\x06-\n\x06\x03\x06\x03\x06\x03" +
+		"\x06\x03\x06\x05\x063\n\x06\x03\x07\x03\x07\x03\x07\x03\x07\x02\x02\x02" +
+		"\b\x02\x02\x04\x02\x06\x02\b\x02\n\x02\f\x02\x02\x02\x029\x02\x11\x03" +
+		"\x02\x02\x02\x04\x13\x03\x02\x02\x02\x06\x1B\x03\x02\x02\x02\b)\x03\x02" +
+		"\x02\x02\n,\x03\x02\x02\x02\f4\x03\x02\x02\x02\x0E\x12\x05\x04\x03\x02" +
+		"\x0F\x12\x05\b\x05\x02\x10\x12\x07\x02\x02\x03\x11\x0E\x03\x02\x02\x02" +
+		"\x11\x0F\x03\x02\x02\x02\x11\x10\x03\x02\x02\x02\x12\x03\x03\x02\x02\x02" +
+		"\x13\x18\x05\x06\x04\x02\x14\x15\x07\x04\x02\x02\x15\x17\x05\x06\x04\x02" +
+		"\x16\x14\x03\x02\x02\x02\x17\x1A\x03\x02\x02\x02\x18\x16\x03\x02\x02\x02" +
+		"\x18\x19\x03\x02\x02\x02\x19\x05\x03\x02\x02\x02\x1A\x18\x03\x02\x02\x02" +
+		"\x1B \x05\b\x05\x02\x1C\x1D\x07\x03\x02\x02\x1D\x1F\x05\b\x05\x02\x1E" +
+		"\x1C\x03\x02\x02\x02\x1F\"\x03\x02\x02\x02 \x1E\x03\x02\x02\x02 !\x03" +
+		"\x02\x02\x02!\x07\x03\x02\x02\x02\" \x03\x02\x02\x02#*\x05\n\x06\x02$" +
+		"*\x05\f\x07\x02%&\x07\x05\x02\x02&\'\x05\x04\x03\x02\'(\x07\x06\x02\x02" +
+		"(*\x03\x02\x02\x02)#\x03\x02\x02\x02)$\x03\x02\x02\x02)%\x03\x02\x02\x02" +
+		"*\t\x03\x02\x02\x02+-\x07\b\x02\x02,+\x03\x02\x02\x02,-\x03\x02\x02\x02" +
+		"-.\x03\x02\x02\x02./\x07\f\x02\x02/2\x07\v\x02\x0201\x07\t\x02\x0213\x07" +
+		"\x07\x02\x0220\x03\x02\x02\x0223\x03\x02\x02\x023\v\x03\x02\x02\x0245" +
+		"\x07\n\x02\x0256\x07\v\x02\x026\r\x03\x02\x02\x02\b\x11\x18 ),2";
 	public static __ATN: ATN;
 	public static get _ATN(): ATN {
 		if (!PrerequisitesParser.__ATN) {
@@ -542,6 +516,9 @@ export class AtomContext extends ParserRuleContext {
 	public course(): CourseContext | undefined {
 		return this.tryGetRuleContext(0, CourseContext);
 	}
+	public test(): TestContext | undefined {
+		return this.tryGetRuleContext(0, TestContext);
+	}
 	public OPARENS(): TerminalNode | undefined { return this.tryGetToken(PrerequisitesParser.OPARENS, 0); }
 	public expression(): ExpressionContext | undefined {
 		return this.tryGetRuleContext(0, ExpressionContext);
@@ -576,17 +553,14 @@ export class AtomContext extends ParserRuleContext {
 
 
 export class CourseContext extends ParserRuleContext {
-	public COURSE_PREFIX(): TerminalNode { return this.getToken(PrerequisitesParser.COURSE_PREFIX, 0); }
-	public subject(): SubjectContext {
-		return this.getRuleContext(0, SubjectContext);
-	}
-	public number(): NumberContext {
-		return this.getRuleContext(0, NumberContext);
-	}
-	public GRADE_PREFIX(): TerminalNode { return this.getToken(PrerequisitesParser.GRADE_PREFIX, 0); }
-	public grade(): GradeContext {
-		return this.getRuleContext(0, GradeContext);
-	}
+	public _subject: Token;
+	public _number: Token;
+	public _grade: Token;
+	public COURSE_SUBJECT(): TerminalNode { return this.getToken(PrerequisitesParser.COURSE_SUBJECT, 0); }
+	public COURSE_NUMBER(): TerminalNode { return this.getToken(PrerequisitesParser.COURSE_NUMBER, 0); }
+	public COURSE_PREFIX(): TerminalNode | undefined { return this.tryGetToken(PrerequisitesParser.COURSE_PREFIX, 0); }
+	public GRADE_PREFIX(): TerminalNode | undefined { return this.tryGetToken(PrerequisitesParser.GRADE_PREFIX, 0); }
+	public GRADE_LETTER(): TerminalNode | undefined { return this.tryGetToken(PrerequisitesParser.GRADE_LETTER, 0); }
 	constructor(parent: ParserRuleContext | undefined, invokingState: number) {
 		super(parent, invokingState);
 	}
@@ -615,89 +589,32 @@ export class CourseContext extends ParserRuleContext {
 }
 
 
-export class SubjectContext extends ParserRuleContext {
-	public COURSE_SUBJECT(): TerminalNode { return this.getToken(PrerequisitesParser.COURSE_SUBJECT, 0); }
-	constructor(parent: ParserRuleContext | undefined, invokingState: number) {
-		super(parent, invokingState);
-	}
-	// @Override
-	public get ruleIndex(): number { return PrerequisitesParser.RULE_subject; }
-	// @Override
-	public enterRule(listener: PrerequisitesListener): void {
-		if (listener.enterSubject) {
-			listener.enterSubject(this);
-		}
-	}
-	// @Override
-	public exitRule(listener: PrerequisitesListener): void {
-		if (listener.exitSubject) {
-			listener.exitSubject(this);
-		}
-	}
-	// @Override
-	public accept<Result>(visitor: PrerequisitesVisitor<Result>): Result {
-		if (visitor.visitSubject) {
-			return visitor.visitSubject(this);
-		} else {
-			return visitor.visitChildren(this);
-		}
-	}
-}
-
-
-export class NumberContext extends ParserRuleContext {
+export class TestContext extends ParserRuleContext {
+	public _name: Token;
+	public _score: Token;
+	public TEST_NAME(): TerminalNode { return this.getToken(PrerequisitesParser.TEST_NAME, 0); }
 	public COURSE_NUMBER(): TerminalNode { return this.getToken(PrerequisitesParser.COURSE_NUMBER, 0); }
 	constructor(parent: ParserRuleContext | undefined, invokingState: number) {
 		super(parent, invokingState);
 	}
 	// @Override
-	public get ruleIndex(): number { return PrerequisitesParser.RULE_number; }
+	public get ruleIndex(): number { return PrerequisitesParser.RULE_test; }
 	// @Override
 	public enterRule(listener: PrerequisitesListener): void {
-		if (listener.enterNumber) {
-			listener.enterNumber(this);
+		if (listener.enterTest) {
+			listener.enterTest(this);
 		}
 	}
 	// @Override
 	public exitRule(listener: PrerequisitesListener): void {
-		if (listener.exitNumber) {
-			listener.exitNumber(this);
+		if (listener.exitTest) {
+			listener.exitTest(this);
 		}
 	}
 	// @Override
 	public accept<Result>(visitor: PrerequisitesVisitor<Result>): Result {
-		if (visitor.visitNumber) {
-			return visitor.visitNumber(this);
-		} else {
-			return visitor.visitChildren(this);
-		}
-	}
-}
-
-
-export class GradeContext extends ParserRuleContext {
-	public GRADE_LETTER(): TerminalNode { return this.getToken(PrerequisitesParser.GRADE_LETTER, 0); }
-	constructor(parent: ParserRuleContext | undefined, invokingState: number) {
-		super(parent, invokingState);
-	}
-	// @Override
-	public get ruleIndex(): number { return PrerequisitesParser.RULE_grade; }
-	// @Override
-	public enterRule(listener: PrerequisitesListener): void {
-		if (listener.enterGrade) {
-			listener.enterGrade(this);
-		}
-	}
-	// @Override
-	public exitRule(listener: PrerequisitesListener): void {
-		if (listener.exitGrade) {
-			listener.exitGrade(this);
-		}
-	}
-	// @Override
-	public accept<Result>(visitor: PrerequisitesVisitor<Result>): Result {
-		if (visitor.visitGrade) {
-			return visitor.visitGrade(this);
+		if (visitor.visitTest) {
+			return visitor.visitTest(this);
 		} else {
 			return visitor.visitChildren(this);
 		}

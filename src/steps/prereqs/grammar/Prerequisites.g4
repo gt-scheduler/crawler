@@ -20,24 +20,19 @@ term
 
 atom
     : course
+    | test
     | (OPARENS expression CPARENS)
     ;
  
 course
-    : COURSE_PREFIX subject number GRADE_PREFIX grade
+    : COURSE_PREFIX? subject=COURSE_SUBJECT number=COURSE_NUMBER (GRADE_PREFIX grade=GRADE_LETTER)?
     ;
 
-subject
-    : COURSE_SUBJECT
+test
+    // Re-use course number here to avoid parse ambiguity
+    : name=TEST_NAME score=COURSE_NUMBER
     ;
 
-number
-    : COURSE_NUMBER
-    ;
-
-grade
-    : GRADE_LETTER
-    ;
 
 // Lexer rules
 AND : 'and';
@@ -50,20 +45,30 @@ GRADE_LETTER
     | 'T'
     ;
 
-COURSE_NUMBER
-    : [0-9X]+
-    ;
-
-COURSE_SUBJECT
-    : [A-Z]+
-    ;
-
 COURSE_PREFIX
     : 'Undergraduate Semester level'
+    | 'Graduate Semester level'
     ;
 
 GRADE_PREFIX
     : 'Minimum Grade of'
+    ;
+
+TEST_NAME
+    : 'SAT Mathematics'
+    | 'MATH SECTION SCORE'
+    | 'ACT Math'
+    | 'Converted ACT Math'
+    | 'Math: Calculus AB'
+    | 'Math: Calculus BC'
+    ;
+
+COURSE_NUMBER
+    : [0-9X]+[A-Z]*
+    ;
+
+COURSE_SUBJECT
+    : [A-Z]+
     ;
 
 SPACE

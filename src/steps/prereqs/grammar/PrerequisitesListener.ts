@@ -8,9 +8,7 @@ import { ExpressionContext } from "./PrerequisitesParser";
 import { TermContext } from "./PrerequisitesParser";
 import { AtomContext } from "./PrerequisitesParser";
 import { CourseContext } from "./PrerequisitesParser";
-import { SubjectContext } from "./PrerequisitesParser";
-import { NumberContext } from "./PrerequisitesParser";
-import { GradeContext } from "./PrerequisitesParser";
+import { TestContext } from "./PrerequisitesParser";
 
 
 /**
@@ -74,36 +72,14 @@ export interface PrerequisitesListener extends ParseTreeListener {
 	exitCourse?: (ctx: CourseContext) => void;
 
 	/**
-	 * Enter a parse tree produced by `PrerequisitesParser.subject`.
+	 * Enter a parse tree produced by `PrerequisitesParser.test`.
 	 * @param ctx the parse tree
 	 */
-	enterSubject?: (ctx: SubjectContext) => void;
+	enterTest?: (ctx: TestContext) => void;
 	/**
-	 * Exit a parse tree produced by `PrerequisitesParser.subject`.
+	 * Exit a parse tree produced by `PrerequisitesParser.test`.
 	 * @param ctx the parse tree
 	 */
-	exitSubject?: (ctx: SubjectContext) => void;
-
-	/**
-	 * Enter a parse tree produced by `PrerequisitesParser.number`.
-	 * @param ctx the parse tree
-	 */
-	enterNumber?: (ctx: NumberContext) => void;
-	/**
-	 * Exit a parse tree produced by `PrerequisitesParser.number`.
-	 * @param ctx the parse tree
-	 */
-	exitNumber?: (ctx: NumberContext) => void;
-
-	/**
-	 * Enter a parse tree produced by `PrerequisitesParser.grade`.
-	 * @param ctx the parse tree
-	 */
-	enterGrade?: (ctx: GradeContext) => void;
-	/**
-	 * Exit a parse tree produced by `PrerequisitesParser.grade`.
-	 * @param ctx the parse tree
-	 */
-	exitGrade?: (ctx: GradeContext) => void;
+	exitTest?: (ctx: TestContext) => void;
 }
 

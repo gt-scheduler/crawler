@@ -1,4 +1,10 @@
-import { CharStreams, CommonTokenStream } from "antlr4ts";
+import {
+  ANTLRErrorListener,
+  CharStreams,
+  CommonTokenStream,
+  RecognitionException,
+  Recognizer,
+} from "antlr4ts";
 import { AbstractParseTreeVisitor } from "antlr4ts/tree/AbstractParseTreeVisitor";
 import { PrerequisitesLexer } from "./grammar/PrerequisitesLexer";
 import {
@@ -13,7 +19,7 @@ import { regexExec } from "../../utils";
 
 // Final parsed representation
 export type MinimumGrade = "A" | "B" | "C" | "D" | "T";
-export type PrerequisiteCourse = { id: string; grade: MinimumGrade };
+export type PrerequisiteCourse = { id: string; grade?: MinimumGrade };
 export type PrerequisiteClause = PrerequisiteCourse | PrerequisiteSet;
 export type PrerequisiteOperator = "and" | "or";
 export type PrerequisiteSet = [
@@ -51,11 +57,10 @@ export async function parsePrereqs(
   const allPrereqs: Record<string, Prerequisites> = {};
   const parsePromises = promises.map(async (promise) => {
     const [courseId, html] = await promise;
-    allPrereqs[courseId] = parseCoursePrereqs(html);
+    allPrereqs[courseId] = parseCoursePrereqs(html, courseId);
   });
 
   await Promise.all(parsePromises);
-  console.log(JSON.stringify(allPrereqs));
   return allPrereqs;
 }
 
@@ -66,7 +71,7 @@ const prereqSectionRegex = /<br \/>\s*(.*)\s*<br \/>/;
  * Parses the HTML for a single course to get its prerequisites
  * @param html - Source HTML from the course details page
  */
-function parseCoursePrereqs(html: string): Prerequisites {
+function parseCoursePrereqs(html: string, courseId: string): Prerequisites {
   const prereqFieldHeaderIndex = html.indexOf(prereqSectionStart);
   if (prereqFieldHeaderIndex === -1) {
     return [];
@@ -83,10 +88,14 @@ function parseCoursePrereqs(html: string): Prerequisites {
 
   // Create the lexer and parser using the ANTLR 4 grammar defined in ./grammar
   // (using antlr4ts: https://github.com/tunnelvisionlabs/antlr4ts)
-  const charStream = CharStreams.fromString(cleaned);
+  const charStream = CharStreams.fromString(cleaned, courseId);
   const lexer = new PrerequisitesLexer(charStream);
+  lexer.removeErrorListeners();
+  lexer.addErrorListener(new ErrorListener(courseId, cleaned));
   const tokenStream = new CommonTokenStream(lexer);
   const parser = new PrerequisitesParser(tokenStream);
+  parser.removeErrorListeners();
+  parser.addErrorListener(new ErrorListener(courseId, cleaned));
 
   // Get the top-level "parse" rule's tree
   // and pass it into our visitor to transform the parse tree
@@ -94,6 +103,11 @@ function parseCoursePrereqs(html: string): Prerequisites {
   const tree = parser.parse();
   const visitor = new PrefixNotationVisitor();
   const prerequisiteClause = visitor.visit(tree);
+
+  // No prerequisites
+  if (prerequisiteClause == null) {
+    return [];
+  }
 
   // If there is only a single prereq, return as a prefix set with "AND"
   if (isSingleCourse(prerequisiteClause)) {
@@ -174,6 +188,35 @@ function flatten(source: PrerequisiteSet): PrerequisiteSet {
   return [operator, ...children.map(flattenInner)];
 }
 
+/**
+ * Custom error listener class that lets us prepend the course ID
+ * onto parsing errors so that they can be easier identified from logs
+ */
+class ErrorListener implements ANTLRErrorListener<unknown> {
+  courseId: string;
+  original: string;
+  
+  constructor(courseId: string, original: string) {
+    this.courseId = courseId;
+    this.original = original;
+  }
+
+  public syntaxError<T>(
+    _recognizer: Recognizer<T, any>,
+    _offendingSymbol: T,
+    line: number,
+    charPositionInLine: number,
+    msg: string,
+    _e: RecognitionException | undefined
+  ): void {
+    const baseMessage = `line ${line}:${charPositionInLine} ${msg}`;
+    console.error(
+      `An error occurred while parsing prerequisites for ${this.courseId}: ${baseMessage}`
+    );
+    console.error(`Original prerequisites text from Oscar: ${this.original}`)
+  }
+}
+
 // Defines the class used to flatten the parse tree
 // into the prefix-notation parsed version
 class PrefixNotationVisitor
@@ -186,24 +229,41 @@ class PrefixNotationVisitor
   // Expression: logical disjunction (OR)
   visitExpression(ctx: ExpressionContext): PrerequisiteClause {
     // Create the `PrerequisiteSet` using each child
-    return ["or", ...ctx.term().map((termCtx) => this.visit(termCtx))];
+    return [
+      "or",
+      ...ctx
+        .term()
+        .map((termCtx) => this.visit(termCtx))
+        .filter((term) => term != null),
+    ];
   }
 
   // Term: logical conjunction (AND)
   visitTerm(ctx: TermContext): PrerequisiteClause {
     // Create the `PrerequisiteSet` using each child
-    return ["and", ...ctx.atom().map((atomCtx) => this.visit(atomCtx))];
+    return [
+      "and",
+      ...ctx
+        .atom()
+        .map((atomCtx) => this.visit(atomCtx))
+        .filter((term) => term != null),
+    ];
   }
 
   visitAtom(ctx: AtomContext): PrerequisiteClause {
     // Visit either the course or the expression inside the parentheses
     const course = ctx.course();
     const expression = ctx.expression();
+    const test = ctx.test();
 
     if (course != null) {
       return this.visit(course);
     } else if (expression != null) {
       return this.visit(expression);
+    } else if (test != null) {
+      // Note: we ignore test atoms at the moment,
+      // though this can be easily changed in the future
+      return this.defaultResult();
     }
 
     throw new Error("Empty Atom received");
@@ -212,9 +272,16 @@ class PrefixNotationVisitor
   visitCourse(ctx: CourseContext): PrerequisiteClause {
     // Construct the base string for this course
     // using the format expected by the API
-    const subject = ctx.subject().COURSE_SUBJECT().toString();
-    const number = ctx.number().COURSE_NUMBER().toString();
-    const grade = ctx.grade().GRADE_LETTER().toString();
-    return { id: `${subject} ${number}`, grade: grade as MinimumGrade };
+    const subject = ctx.COURSE_SUBJECT().toString();
+    const number = ctx.COURSE_NUMBER().toString();
+
+    // There might not be a grade
+    let grade: MinimumGrade | undefined = undefined;
+    const gradeCtx = ctx.GRADE_LETTER();
+    if (gradeCtx != null) {
+      grade = gradeCtx.toString() as MinimumGrade;
+    }
+
+    return { id: `${subject} ${number}`, grade };
   }
 }

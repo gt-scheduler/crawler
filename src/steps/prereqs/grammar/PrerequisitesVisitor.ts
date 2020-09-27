@@ -8,9 +8,7 @@ import { ExpressionContext } from "./PrerequisitesParser";
 import { TermContext } from "./PrerequisitesParser";
 import { AtomContext } from "./PrerequisitesParser";
 import { CourseContext } from "./PrerequisitesParser";
-import { SubjectContext } from "./PrerequisitesParser";
-import { NumberContext } from "./PrerequisitesParser";
-import { GradeContext } from "./PrerequisitesParser";
+import { TestContext } from "./PrerequisitesParser";
 
 
 /**
@@ -57,24 +55,10 @@ export interface PrerequisitesVisitor<Result> extends ParseTreeVisitor<Result> {
 	visitCourse?: (ctx: CourseContext) => Result;
 
 	/**
-	 * Visit a parse tree produced by `PrerequisitesParser.subject`.
+	 * Visit a parse tree produced by `PrerequisitesParser.test`.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	visitSubject?: (ctx: SubjectContext) => Result;
-
-	/**
-	 * Visit a parse tree produced by `PrerequisitesParser.number`.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	visitNumber?: (ctx: NumberContext) => Result;
-
-	/**
-	 * Visit a parse tree produced by `PrerequisitesParser.grade`.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	visitGrade?: (ctx: GradeContext) => Result;
+	visitTest?: (ctx: TestContext) => Result;
 }
 

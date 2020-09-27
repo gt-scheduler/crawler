@@ -1,6 +1,9 @@
 import axios from "axios";
 import { concatParams } from "../../utils";
 
+// The delay between sequential requests, in ms
+const DELAY_PER_REQUEST = 100;
+
 /**
  * Downloads the course prerequisite information for all provided courses in parallel
  * (**note**: returns an array of promises to allow for parallel downstream processing)
@@ -13,8 +16,14 @@ export function downloadPrereqs(
 ): Promise<[courseId: string, html: string]>[] {
   // Note: it is very important that we construct an array of promises here
   // and let downstream components wait on all of them at the end (in parallel)
-  // instead of awaiting them one by one (in series)
-  return courseIds.map(courseId => downloadCoursePrereqs(term, courseId));
+  // instead of awaiting them one by one (in series).
+  // However, because we do this, we need to be careful
+  // that we don't get rate limited/run into issues with connection limits.
+  // To solve this, we sleep for varying amounts
+  return courseIds.map(async (courseId, i) => {
+    await new Promise(r => setTimeout(r, i * DELAY_PER_REQUEST));
+    return downloadCoursePrereqs(term, courseId);
+  });
 }
 
 /**

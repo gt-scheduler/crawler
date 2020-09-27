@@ -12,6 +12,10 @@ export function attachPrereqs(termData: TermData, prerequisites: Record<string, 
     // attach it to the corresponding course
     // (mutate in-place)
     Object.keys(prerequisites).forEach(courseId => {
-        termData.courses[courseId][2] = prerequisites[courseId];
+        if (courseId in termData.courses) {
+            termData.courses[courseId][2] = prerequisites[courseId];
+        } else {
+            console.warn(`Received prerequisite data for unknown course '${courseId}'`);
+        }
     })
 }
