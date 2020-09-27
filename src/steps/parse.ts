@@ -1,4 +1,5 @@
 import { cache, extract, match, regexExec } from '../utils';
+import { Prerequisites } from './prereqs/parse';
 
 /**
  * Primary JSON object returned by the API.
@@ -72,6 +73,24 @@ export type Course = [
    * the section IDs are the keys (`"A"`, `"B"`, `"S2"`, etc.)
    */
   sections: Record<string, Section>,
+  /**
+   * a tree of prerequisite classes and the necessary grades in them
+   * (using boolean expressions in prefix order)
+   * 
+   * @example
+   * 
+   * ```json
+     [
+       "and",
+       [
+          "or",
+          {"id":"CS 3510", "grade":"C"},
+          {"id":"CS 3511", "grade":"C"}
+       ]
+     ]
+   * ```
+   */
+  prerequisites: Prerequisites,
 ];
 
 /**
@@ -207,6 +226,7 @@ export function parse(html: string): TermData {
       courses[courseId] = [
         title,
         sections,
+        [],
       ];
     }
     courses[courseId][1][sectionId] = [

@@ -8,5 +8,10 @@ import { TermData } from "../parse";
  * @param prerequisites - Global course Id -> prerequisites map as parsed in previous steps
  */
 export function attachPrereqs(termData: TermData, prerequisites: Record<string, Prerequisites>): void {
-    // TODO implement
+    // For each parsed prerequisite,
+    // attach it to the corresponding course
+    // (mutate in-place)
+    Object.keys(prerequisites).forEach(courseId => {
+        termData.courses[courseId][2] = prerequisites[courseId];
+    })
 }

@@ -24,6 +24,19 @@ export type PrerequisiteSet = [
 /**
  * Recursive data structure that is the sequence of all prerequisites in prefix notation,
  * parsed from the information on Oscar
+ * 
+ * @example
+ * 
+ * ```json
+   [
+     "and",
+     [
+       "or",
+       {"id":"CS 3510", "grade":"C"},
+       {"id":"CS 3511", "grade":"C"}
+     ]
+   ]
+ * ```
  */
 export type Prerequisites = PrerequisiteSet | [];
 
@@ -137,7 +150,6 @@ function flatten(source: PrerequisiteSet): PrerequisiteSet {
     // Check for nested `PrerequisiteSet`s that have the same operator
     const newChildren = [];
     for (const child of children) {
-      // console.log(child);
       const flattened = flattenInner(child);
 
       // If the child is an array and has the same operator,
