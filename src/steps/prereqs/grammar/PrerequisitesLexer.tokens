@@ -1,0 +1,16 @@
+AND=1
+OR=2
+OPARENS=3
+CPARENS=4
+GRADE_LETTER=5
+COURSE_NUMBER=6
+COURSE_SUBJECT=7
+COURSE_PREFIX=8
+GRADE_PREFIX=9
+SPACE=10
+'and'=1
+'or'=2
+'('=3
+')'=4
+'Undergraduate Semester level'=8
+'Minimum Grade of'=9

@@ -43,3 +43,18 @@ export function concatParams(params: Record<string, string>): string {
     .map(([key, value]) => `${key}=${encodeURIComponent(value)}`)
     .join("&");
 }
+
+/**
+ * Ensures a regular expression executes with a match,
+ * or throws an exception
+ * @param regex - Source regular expression
+ * @param str - Target string
+ */
+export function regexExec(regex: RegExp, str: string): RegExpExecArray {
+  const result = regex.exec(str);
+  if (result == null)
+    throw new Error(
+      "Regular expression '${}' failed to execute on string '${}'"
+    );
+  return result;
+}

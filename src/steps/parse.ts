@@ -1,4 +1,4 @@
-import { cache, extract, match } from '../utils';
+import { cache, extract, match, regexExec } from '../utils';
 
 /**
  * Primary JSON object returned by the API.
@@ -166,7 +166,7 @@ export function parse(html: string): TermData {
   sections.forEach(section => {
     const [titlePart, descriptionPart, , ...meetingParts] = section.split('<tr>\n');
 
-    const [, courseTitle, crn, courseId, sectionId] = /^<a href=".+">(.+) - (\d{5}) - (\w+ \w+) - (.+)<\/a>/.exec(titlePart);
+    const [, courseTitle, crn, courseId, sectionId] = regexExec(/^<a href=".+">(.+) - (\d{5}) - (\w+ \w+) - (.+)<\/a>/, titlePart);
 
     const fields: Record<string, string | undefined> = extract(descriptionPart, /^<SPAN class="fieldlabeltext">(.+): <\/SPAN>(.+)$/mg, results => {
       const [, key, value] = results;
