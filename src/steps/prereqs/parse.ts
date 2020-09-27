@@ -109,7 +109,7 @@ function parseCoursePrereqs(html: string, courseId: string): Prerequisites {
     return [];
   }
 
-  // If there is only a single prereq, return as a prefix set with "AND"
+  // If there is only a single prereq, return as a prefix set with "and"
   if (isSingleCourse(prerequisiteClause)) {
     return ["and", prerequisiteClause];
   }
@@ -134,10 +134,26 @@ function cleanContents(contents: string): string {
   return contents.trim();
 }
 
+/**
+ * Type guard to determine if a clause is a single course
+ * @param clause - source clause (either single course or prereq set)
+ */
 function isSingleCourse(
   clause: PrerequisiteClause
 ): clause is PrerequisiteCourse {
   return typeof clause === "object" && !Array.isArray(clause);
+}
+
+/**
+ * Type guard to determine if a clause is a null prerequisite set
+ * @param clause - source clause (either single course or prereq set)
+ */
+function isNullSet(
+  clause: PrerequisiteClause
+): clause is [operator: PrerequisiteOperator] {
+  return (
+    typeof clause === "object" && Array.isArray(clause) && clause.length === 1
+  );
 }
 
 /**
@@ -147,6 +163,7 @@ function isSingleCourse(
  * - consecutive operands
  *   for the same operator in a series of nested `PrerequisiteSet`s
  *   are put into a single `PrerequisiteSet`
+ * - null set PrerequisiteSet`s like `['and']` get removed
  * @param source - Source prerequisites tree using prefix boolean operators
  */
 function flatten(source: PrerequisiteSet): PrerequisiteSet {
@@ -165,6 +182,7 @@ function flatten(source: PrerequisiteSet): PrerequisiteSet {
     const newChildren = [];
     for (const child of children) {
       const flattened = flattenInner(child);
+      if (isNullSet(flattened)) continue;
 
       // If the child is an array and has the same operator,
       // append its children to the current children array
@@ -185,7 +203,10 @@ function flatten(source: PrerequisiteSet): PrerequisiteSet {
 
   // Call the recursive traversal function on the root node's children
   const [operator, ...children] = source;
-  return [operator, ...children.map(flattenInner)];
+  const transformedChildren = children
+    .map(flattenInner)
+    .filter((c) => !isNullSet(c));
+  return [operator, ...transformedChildren];
 }
 
 /**
@@ -195,7 +216,7 @@ function flatten(source: PrerequisiteSet): PrerequisiteSet {
 class ErrorListener implements ANTLRErrorListener<unknown> {
   courseId: string;
   original: string;
-  
+
   constructor(courseId: string, original: string) {
     this.courseId = courseId;
     this.original = original;
@@ -213,7 +234,7 @@ class ErrorListener implements ANTLRErrorListener<unknown> {
     console.error(
       `An error occurred while parsing prerequisites for ${this.courseId}: ${baseMessage}`
     );
-    console.error(`Original prerequisites text from Oscar: ${this.original}`)
+    console.error(`Original prerequisites text from Oscar: ${this.original}`);
   }
 }
 
