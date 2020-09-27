@@ -24,6 +24,8 @@ import { VocabularyImpl } from "antlr4ts/VocabularyImpl";
 import * as Utils from "antlr4ts/misc/Utils";
 
 import { PrerequisitesListener } from "./PrerequisitesListener";
+import { PrerequisitesVisitor } from "./PrerequisitesVisitor";
+
 
 export class PrerequisitesParser extends Parser {
 	public static readonly AND = 1;
@@ -427,6 +429,14 @@ export class ParseContext extends ParserRuleContext {
 			listener.exitParse(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: PrerequisitesVisitor<Result>): Result {
+		if (visitor.visitParse) {
+			return visitor.visitParse(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -466,6 +476,14 @@ export class ExpressionContext extends ParserRuleContext {
 	public exitRule(listener: PrerequisitesListener): void {
 		if (listener.exitExpression) {
 			listener.exitExpression(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: PrerequisitesVisitor<Result>): Result {
+		if (visitor.visitExpression) {
+			return visitor.visitExpression(this);
+		} else {
+			return visitor.visitChildren(this);
 		}
 	}
 }
@@ -509,6 +527,14 @@ export class TermContext extends ParserRuleContext {
 			listener.exitTerm(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: PrerequisitesVisitor<Result>): Result {
+		if (visitor.visitTerm) {
+			return visitor.visitTerm(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -536,6 +562,14 @@ export class AtomContext extends ParserRuleContext {
 	public exitRule(listener: PrerequisitesListener): void {
 		if (listener.exitAtom) {
 			listener.exitAtom(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: PrerequisitesVisitor<Result>): Result {
+		if (visitor.visitAtom) {
+			return visitor.visitAtom(this);
+		} else {
+			return visitor.visitChildren(this);
 		}
 	}
 }
@@ -570,6 +604,14 @@ export class CourseContext extends ParserRuleContext {
 			listener.exitCourse(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: PrerequisitesVisitor<Result>): Result {
+		if (visitor.visitCourse) {
+			return visitor.visitCourse(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -590,6 +632,14 @@ export class SubjectContext extends ParserRuleContext {
 	public exitRule(listener: PrerequisitesListener): void {
 		if (listener.exitSubject) {
 			listener.exitSubject(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: PrerequisitesVisitor<Result>): Result {
+		if (visitor.visitSubject) {
+			return visitor.visitSubject(this);
+		} else {
+			return visitor.visitChildren(this);
 		}
 	}
 }
@@ -614,6 +664,14 @@ export class NumberContext extends ParserRuleContext {
 			listener.exitNumber(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: PrerequisitesVisitor<Result>): Result {
+		if (visitor.visitNumber) {
+			return visitor.visitNumber(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -634,6 +692,14 @@ export class GradeContext extends ParserRuleContext {
 	public exitRule(listener: PrerequisitesListener): void {
 		if (listener.exitGrade) {
 			listener.exitGrade(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: PrerequisitesVisitor<Result>): Result {
+		if (visitor.visitGrade) {
+			return visitor.visitGrade(this);
+		} else {
+			return visitor.visitChildren(this);
 		}
 	}
 }

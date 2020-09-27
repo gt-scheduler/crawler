@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "scripts": {
     "start": "ts-node src",
-    "gen-parser": "antlr4ts src/steps/prereqs/grammar/Prerequisites.g4"
+    "gen-parser": "antlr4ts -visitor src/steps/prereqs/grammar/Prerequisites.g4"
   },
   "dependencies": {
     "antlr4ts": "^0.5.0-alpha.3",

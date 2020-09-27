@@ -47,7 +47,6 @@ CPARENS : ')';
 
 GRADE_LETTER
     : 'A'..'D'
-    | 'F'
     | 'T'
     ;
 
