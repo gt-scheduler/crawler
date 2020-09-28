@@ -2,13 +2,16 @@
   "name": "gt-schedule-crawler",
   "version": "1.0.0",
   "scripts": {
-    "start": "ts-node src"
+    "start": "ts-node src",
+    "gen-parser": "antlr4ts -visitor src/steps/prereqs/grammar/Prerequisites.g4"
   },
   "dependencies": {
+    "antlr4ts": "^0.5.0-alpha.3",
     "axios": "^0.18.1"
   },
   "devDependencies": {
     "@types/node": "^14.0.24",
+    "antlr4ts-cli": "^0.5.0-alpha.3",
     "ts-node": "^8.10.2",
     "typescript": "^4"
   }

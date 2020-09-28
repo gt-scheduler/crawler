@@ -1,13 +1,10 @@
 import axios from 'axios';
+import { concatParams } from "../utils";
 
 export interface FetchOptions {
   subject?: string;
   course?: string;
   title?: string;
-}
-
-function concatParams(params: Record<string, string>) {
-  return Object.entries(params).map(([key, value]) => `${key}=${encodeURIComponent(value)}`).join('&');
 }
 
 export function download(term: string, options: FetchOptions = {}) {

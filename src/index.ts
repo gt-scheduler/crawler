@@ -1,4 +1,12 @@
-import { download, list, parse, write } from './steps';
+import {
+  download,
+  list,
+  parse,
+  downloadPrereqs,
+  parsePrereqs,
+  attachPrereqs,
+  write,
+} from './steps';
 
 async function crawling() {
   console.info('Listing ...');
@@ -10,6 +18,16 @@ async function crawling() {
 
     console.info('Parsing ...');
     const termData = await parse(html);
+
+    console.info("Retrieving prerequisites...");
+    const allCourseIds = Object.keys(termData.courses);
+    const prerequisitePromises = downloadPrereqs(term, allCourseIds);
+
+    console.log("Parsing prerequisite information...");
+    const prereqs = await parsePrereqs(prerequisitePromises)
+
+    console.info("Attaching prerequisite information...");
+    attachPrereqs(termData, prereqs);
 
     console.info('Writing ...');
     await write(term, termData);
