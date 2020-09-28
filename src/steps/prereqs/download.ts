@@ -49,11 +49,32 @@ export async function downloadCoursePrereqs(
     crse_numb_in: number,
   };
 
-  // Perform the request
+  // Perform the request in a retry loop
+  // (sometimes, we get rate limits/transport errors so this tries to mitigates them)
   const query = `?${concatParams(parameters)}`;
   const url = `https://oscar.gatech.edu/pls/bprod/bwckctlg.p_disp_course_detail${query}`;
-  const requestResult = await axios.get<string>(url);
-  return [courseId, requestResult.data];
+  const retries = 10;
+  let lastError: null | unknown = null;
+  for (let i = 0; i < retries; i++) {
+    // Use exponential backoff
+    // (each promise ends up getting staggered
+    //  so we shouldn't need any jitter to avoid a thundering herd)
+    const backoff = Math.pow(i, 2) * 4000;
+    if (backoff > 0) await new Promise(r => setTimeout(r, backoff));
+
+    try {
+      const requestResult = await axios.get<string>(url);
+      return [courseId, requestResult.data];
+    } catch (error) {
+      console.warn(`An error occurred while fetching details for course ${courseId}`);
+      if (i !== retries - 1) console.warn("Retrying after a backoff");
+      lastError = error;
+    }
+  }
+
+  // If we exited the loop, then reject the promise by throwing an error
+  console.error(`Exhausted retries for fetching details for course ${courseId}`);
+  throw lastError;
 }
 
 /**
