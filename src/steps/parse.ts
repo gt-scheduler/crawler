@@ -21,6 +21,10 @@ export interface TermData {
    * Contains the time this JSON file was retrieved
    */
   updatedAt: Date;
+  /**
+   * Version number for the term data
+   */
+  version: string;
 }
 
 /**
@@ -165,7 +169,7 @@ export type Meeting = [
   dateRangeIndex: number,
 ];
 
-export function parse(html: string): TermData {
+export function parse(html: string, version: string): TermData {
   const courses: Record<string, Course> = {};
   const caches: Caches = {
     periods: [],
@@ -240,5 +244,5 @@ export function parse(html: string): TermData {
     ];
   });
 
-  return { courses, caches, updatedAt };
+  return { courses, caches, updatedAt, version };
 }
