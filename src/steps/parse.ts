@@ -136,6 +136,28 @@ export type Section = [
   gradeBaseIndex: number,
 ];
 
+class Location {
+  lat: number
+  long: number
+  constructor(lat: number, long: number) {
+    this.lat = lat
+    this.long = long
+  }
+  
+  getLatLong() {
+    return {lat: this.lat, long: this.long}
+  }
+}
+
+/* 
+* A map consisting of course locations and corresponding coordinates 
+*/
+const courseLocations = new Map([
+['Skiles', new Location(33.773568, -84.395957)],
+['CULC', new Location(33.774909,  -84.396404)],
+['Boggs', new Location(33.776085, -84.400181)],
+]);
+
 /**
  * Contains meeting information about a class section
  * (**Note** that this is an **array** (tuple), not an object)
@@ -156,6 +178,10 @@ export type Meeting = [
    * (e.g. `"College of Business 224"`)
    */
   room: string,
+  /**
+   * an Object containing latitude and longitude for given course
+   */
+  location: Location | undefined,
   /**
    * an array of strings listing all the instructors for this section,
    * along with a 1-character code to mark the principal instructor
@@ -211,6 +237,14 @@ export function parse(html: string, version: string): TermData {
     const meetings = meetingParts.map<Meeting>(meetingPart => {
       let [type, period, days, where, dateRange, scheduleType, instructorsString] = meetingPart.split('\n').slice(0, 7)
         .map(row => row.replace(/<\/?[^>]+(>|$)/g, ''));
+      // convert string location to latitude, longitude coordinates
+      const simplifiedLocation = Array.from(courseLocations.keys()).find(elem => where.includes(elem));
+      let location = undefined;
+      if (simplifiedLocation) {
+        location = courseLocations.get(simplifiedLocation); 
+      } 
+      console.log(where)
+      console.log(location)
       const instructors = instructorsString.replace(/ +/g, ' ').split(', ');
       const periodIndex = cache(caches.periods, period);
       const dateRangeIndex = cache(caches.dateRanges, dateRange);
@@ -219,6 +253,7 @@ export function parse(html: string, version: string): TermData {
         periodIndex,
         days,
         where,
+        location,
         instructors,
         dateRangeIndex,
       ];
