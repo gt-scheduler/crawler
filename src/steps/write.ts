@@ -1,6 +1,6 @@
 import path from 'path';
 import fs from 'fs';
-import { TermData } from './parse';
+import { TermData } from '../types';
 import { writeFile } from '../utils';
 
 const dataPath = path.resolve(__dirname, '..', '..', 'data');

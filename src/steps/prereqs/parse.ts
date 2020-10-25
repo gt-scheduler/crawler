@@ -15,41 +15,20 @@ import {
   TermContext,
 } from "./grammar/PrerequisitesParser";
 import { PrerequisitesVisitor } from "./grammar/PrerequisitesVisitor";
+import {
+  MinimumGrade,
+  PrerequisiteClause,
+  PrerequisiteCourse,
+  PrerequisiteOperator,
+  Prerequisites,
+  PrerequisiteSet
+} from '../../types';
 import { regexExec } from "../../utils";
 
-// Final parsed representation
-export type MinimumGrade = "A" | "B" | "C" | "D" | "T";
-export type PrerequisiteCourse = { id: string; grade?: MinimumGrade };
-export type PrerequisiteClause = PrerequisiteCourse | PrerequisiteSet;
-export type PrerequisiteOperator = "and" | "or";
-export type PrerequisiteSet = [
-  operator: PrerequisiteOperator,
-  ...clauses: PrerequisiteClause[]
-];
-
 /**
- * Recursive data structure that is the sequence of all prerequisites in prefix notation,
- * parsed from the information on Oscar
- * 
- * @example
- * 
- * ```json
-   [
-     "and",
-     [
-       "or",
-       {"id":"CS 3510", "grade":"C"},
-       {"id":"CS 3511", "grade":"C"}
-     ]
-   ]
- * ```
- */
-export type Prerequisites = PrerequisiteSet | [];
-
-/**
- * Parses the HTML for each course prereq page in parallel,
+ * Parses the HTML for each course detail page in parallel,
  * awaiting on all of them at the end to construct the global course id -> prereq map
- * @param promises - List of promises from downloadPrereqs(...)
+ * @param promises - List of promises from downloadDetails(...)
  */
 export async function parsePrereqs(
   promises: Promise<[courseId: string, html: string]>[]

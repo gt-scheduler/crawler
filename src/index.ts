@@ -2,14 +2,16 @@ import {
   download,
   list,
   parse,
-  downloadPrereqs,
+  downloadDetails,
   parsePrereqs,
   attachPrereqs,
+  attachDescriptions,
+  parseDescriptions,
   write,
 } from './steps';
 
 // Current scraped JSON version
-const CURRENT_VERSION = "2";
+const CURRENT_VERSION = 2;
 
 async function crawling() {
   console.info('Listing ...');
@@ -22,15 +24,27 @@ async function crawling() {
     console.info(`Parsing v${CURRENT_VERSION} JSON ...`);
     const termData = await parse(html, CURRENT_VERSION);
 
-    console.info("Retrieving prerequisites...");
     const allCourseIds = Object.keys(termData.courses);
-    const prerequisitePromises = downloadPrereqs(term, allCourseIds);
+    const detailPromises = downloadDetails(term, allCourseIds);
 
-    console.log("Parsing prerequisite information...");
-    const prereqs = await parsePrereqs(prerequisitePromises)
+    // Pass in the detail promise array twice
+    // Each async function will await them,
+    // but since promises are immutable, this is fine
+    console.log("Downloading prerequisite information & course descriptions ...");
+    const prereqParsePromise = parsePrereqs(detailPromises);
+    const descriptionPromise = parseDescriptions(detailPromises);
 
-    console.info("Attaching prerequisite information...");
+    // Await the promises in parallel
+    const [prereqs, descriptions] = await Promise.all([
+      prereqParsePromise,
+      descriptionPromise
+    ]);
+
+    console.info("Attaching prerequisite information ...");
     attachPrereqs(termData, prereqs);
+
+    console.info("Attaching course descriptions ...");
+    attachDescriptions(termData, descriptions);
 
     console.info('Writing ...');
     await write(term, termData);
