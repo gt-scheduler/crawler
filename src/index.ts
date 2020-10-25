@@ -8,6 +8,9 @@ import {
   write,
 } from './steps';
 
+// Current scraped JSON version
+const CURRENT_VERSION = "2";
+
 async function crawling() {
   console.info('Listing ...');
   const terms = await list();
@@ -16,8 +19,8 @@ async function crawling() {
     console.info(`Downloading ${term} ...`);
     const html = await download(term);
 
-    console.info('Parsing ...');
-    const termData = await parse(html);
+    console.info(`Parsing v${CURRENT_VERSION} JSON ...`);
+    const termData = await parse(html, CURRENT_VERSION);
 
     console.info("Retrieving prerequisites...");
     const allCourseIds = Object.keys(termData.courses);
