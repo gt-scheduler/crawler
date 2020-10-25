@@ -21,7 +21,7 @@ export interface TermData {
   /**
    * Version number for the term data
    */
-  version: string;
+  version: number;
 }
 
 /**

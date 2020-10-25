@@ -11,7 +11,7 @@ import {
 } from './steps';
 
 // Current scraped JSON version
-const CURRENT_VERSION = "2";
+const CURRENT_VERSION = 2;
 
 async function crawling() {
   console.info('Listing ...');

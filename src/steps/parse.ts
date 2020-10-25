@@ -1,7 +1,7 @@
 import { TermData, Course, Caches, Meeting, Section } from '../types';
 import { cache, extract, match, regexExec } from '../utils';
 
-export function parse(html: string, version: string): TermData {
+export function parse(html: string, version: number): TermData {
   const courses: Record<string, Course> = {};
   const caches: Caches = {
     periods: [],
