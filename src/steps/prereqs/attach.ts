@@ -1,5 +1,4 @@
-import { Prerequisites } from "./parse";
-import { TermData } from "../parse";
+import { TermData, Prerequisites } from "../../types";
 
 /**
  * Attaches course prerequisites to the data for the current term in-place
@@ -17,5 +16,5 @@ export function attachPrereqs(termData: TermData, prerequisites: Record<string, 
         } else {
             console.warn(`Received prerequisite data for unknown course '${courseId}'`);
         }
-    })
+    });
 }

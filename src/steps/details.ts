@@ -1,16 +1,16 @@
 import axios from "axios";
-import { concatParams } from "../../utils";
+import { concatParams } from "../utils";
 
 // The delay between sequential requests, in ms
 const DELAY_PER_REQUEST = 100;
 
 /**
- * Downloads the course prerequisite information for all provided courses in parallel
+ * Downloads the course detail information for all provided courses in parallel
  * (**note**: returns an array of promises to allow for parallel downstream processing)
  * @param term - The term string
  * @param courseId - An array of joined course ids (SUBJECT NUMBER); i.e. `"CS 2340"`
  */
-export function downloadPrereqs(
+export function downloadDetails(
   term: string,
   courseIds: string[]
 ): Promise<[courseId: string, html: string]>[] {
@@ -22,23 +22,23 @@ export function downloadPrereqs(
   // To solve this, we sleep for varying amounts
   return courseIds.map(async (courseId, i) => {
     await new Promise(r => setTimeout(r, i * DELAY_PER_REQUEST));
-    return downloadCoursePrereqs(term, courseId);
+    return downloadCourseDetails(term, courseId);
   });
 }
 
 /**
- * Downloads the course prerequisite information for a single course
+ * Downloads the course detail information for a single course
  * @param term - The term string
  * @param courseId - The joined course id (SUBJECT NUMBER); i.e. `"CS 2340"`
  */
-export async function downloadCoursePrereqs(
+export async function downloadCourseDetails(
   term: string,
   courseId: string
 ): Promise<[courseId: string, html: string]> {
   // Attempt to split the course ID into its subject/number
   const splitResult = splitCourseId(courseId);
   if (splitResult === null) {
-    console.warn(`Could not split course ID '${courseId}'; skipping prereq scraping for it`);
+    console.warn(`Could not split course ID '${courseId}'; skipping detail scraping for it`);
     return [courseId, ""];
   }
 
