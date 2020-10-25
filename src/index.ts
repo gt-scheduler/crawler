@@ -40,10 +40,10 @@ async function crawling() {
       descriptionPromise
     ]);
 
-    console.info("Attaching prerequisite information...");
+    console.info("Attaching prerequisite information ...");
     attachPrereqs(termData, prereqs);
 
-    console.info("Attaching course descriptions...");
+    console.info("Attaching course descriptions ...");
     attachDescriptions(termData, descriptions);
 
     console.info('Writing ...');
