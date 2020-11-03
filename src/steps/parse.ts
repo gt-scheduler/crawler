@@ -1,8 +1,8 @@
 import { TermData, Course, Caches, Meeting, Section, Location } from '../types';
 import { cache, extract, match, regexExec } from '../utils';
 
-/* 
-* A map consisting of course locations and corresponding coordinates 
+/*
+* A map consisting of course locations and corresponding coordinates
 */
 const courseLocations = new Map([
   ['Skiles', new Location(33.773568, -84.395957)],
@@ -11,6 +11,8 @@ const courseLocations = new Map([
   ['Architecture (West)', new Location(33.776076, -84.396114)],
   ['Architecture (East)', new Location(33.776177, -84.395459)]
 ]);
+
+let DEBUG_locations = new Map([]);
 
 export function parse(html: string, version: number): TermData {
   const courses: Record<string, Course> = {};
@@ -21,6 +23,7 @@ export function parse(html: string, version: number): TermData {
     campuses: [],
     attributes: [],
     gradeBases: [],
+    locations: [],
   };
   const updatedAt = new Date();
 
@@ -54,23 +57,28 @@ export function parse(html: string, version: number): TermData {
     const meetings = meetingParts.map<Meeting>(meetingPart => {
       let [type, period, days, where, dateRange, scheduleType, instructorsString] = meetingPart.split('\n').slice(0, 7)
         .map(row => row.replace(/<\/?[^>]+(>|$)/g, ''));
+
       // convert string location to latitude, longitude coordinates
-      const simplifiedLocation = Array.from(courseLocations.keys()).find(elem => where.includes(elem));
+      const locationName = Array.from(courseLocations.keys()).find(locName => where.includes(locName));
       let location = undefined;
-      if (simplifiedLocation) {
-        location = courseLocations.get(simplifiedLocation); 
-      } 
-      console.log(where)
-      console.log(location)
+      if (locationName) {
+        location = courseLocations.get(locationName);
+      }
+      // console.log(where)
+      //console.log(location)
+
       const instructors = instructorsString.replace(/ +/g, ' ').split(', ');
       const periodIndex = cache(caches.periods, period);
       const dateRangeIndex = cache(caches.dateRanges, dateRange);
+      const locationIndex = cache(caches.locations, location ? location : null);
+
+      DEBUG_locations.set(where.split(' ').slice(0, -1).join(' '), location);
 
       return [
         periodIndex,
         days,
         where,
-        location,
+        locationIndex,
         instructors,
         dateRangeIndex,
       ];
@@ -98,6 +106,8 @@ export function parse(html: string, version: number): TermData {
       gradeBasisIndex,
     ];
   });
+
+  console.log(DEBUG_locations.keys());
 
   return { courses, caches, updatedAt, version };
 }

@@ -1,4 +1,5 @@
 import fs from 'fs';
+import { Location } from './types';
 
 export function extract<T>(
   text: string,
@@ -17,7 +18,7 @@ export function match(text: string, regexp: RegExp) {
   return results && results[1];
 }
 
-export function cache(array: (string | null)[], value: string | null) {
+export function cache(array: (Location | string | null)[], value: Location | string | null) {
   let index = array.indexOf(value);
   if (!~index) {
     array.push(value);
