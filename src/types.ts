@@ -58,6 +58,10 @@ export interface Caches {
    * List of the different kinds of grading schemes a course can have
    */
   gradeBases: string[];
+  /**
+   * List of the different building locations a class can be at
+   */
+  locations: Location[];
 }
 
 /**
@@ -77,9 +81,9 @@ export type Course = [
   /**
      * a tree of prerequisite classes and the necessary grades in them
      * (using boolean expressions in prefix order)
-     * 
+     *
      * @example
-     * 
+     *
      * ```json
        [
          "and",
@@ -158,6 +162,11 @@ export type Meeting = [
    */
   room: string,
   /**
+   * an integer index into `caches.locations`,
+   * containing the latitude and longitude for a given course
+   */
+  locationIndex: number,
+  /**
    * an array of strings listing all the instructors for this section,
    * along with a 1-character code to mark the principal instructor
    * (e.g. `["Katarzyna Rubar (P)"]`)
@@ -180,11 +189,24 @@ export type PrerequisiteSet = [
 ];
 
 /**
+ * Location information about the building where a class takes place
+ */
+export class Location {
+  lat: number
+  long: number
+
+  constructor(lat: number, long: number) {
+    this.lat = lat
+    this.long = long
+  }
+}
+
+/**
  * Recursive data structure that is the sequence of all prerequisites in prefix notation,
  * parsed from the information on Oscar
- * 
+ *
  * @example
- * 
+ *
  * ```json
    [
      "and",
