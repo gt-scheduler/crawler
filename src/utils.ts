@@ -1,40 +1,48 @@
-import fs from 'fs';
-import { Location } from './types';
+import fs from "fs";
+import { Location } from "./types";
 
 export function extract<T>(
   text: string,
   regexp: RegExp,
-  callback: (execArray: RegExpExecArray) => T) {
+  callback: (execArray: RegExpExecArray) => T
+): T[] {
   const array: T[] = [];
-  let results;
-  while (results = regexp.exec(text)) {
+  for (
+    let results = regexp.exec(text);
+    results != null;
+    results = regexp.exec(text)
+  ) {
     array.push(callback(results));
   }
   return array;
 }
 
-export function match(text: string, regexp: RegExp) {
+export function match(text: string, regexp: RegExp): string | null {
   const results = regexp.exec(text);
   return results && results[1];
 }
 
-export function cache(array: (Location | string | null)[], value: Location | string | null) {
+export function cache(
+  array: (Location | string | null)[],
+  value: Location | string | null
+): number {
   let index = array.indexOf(value);
-  if (!~index) {
+  if (index === -1) {
     array.push(value);
     index = array.length - 1;
   }
   return index;
 }
 
-export function writeFile(path: string, json: any) {
+export function writeFile(path: string, json: unknown): Promise<void> {
   return new Promise((resolve, reject) => {
     const content = JSON.stringify(json);
-    fs.writeFile(path, content, err => {
+    fs.writeFile(path, content, (err) => {
       if (err) {
-        return reject(err);
+        reject(err);
+      } else {
+        resolve();
       }
-      resolve();
     });
   });
 }
