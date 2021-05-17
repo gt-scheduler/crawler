@@ -192,12 +192,13 @@ export type PrerequisiteSet = [
  * Location information about the building where a class takes place
  */
 export class Location {
-  lat: number
-  long: number
+  lat: number;
+
+  long: number;
 
   constructor(lat: number, long: number) {
-    this.lat = lat
-    this.long = long
+    this.lat = lat;
+    this.long = long;
   }
 }
 
