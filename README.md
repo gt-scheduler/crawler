@@ -22,7 +22,7 @@ Copyright (c) 2020 the Bits of Good "GT Scheduler" team
 
 The crawler is a command-line application written in [TypeScript](https://www.typescriptlang.org/) (a typed superset of JavaScript) that runs using Node.js to crawl schedule data from [Oscar](https://oscar.gatech.edu/) (Georgia Tech's registration management system).
 
-It operates as a series of *steps* that are processed after one another (see [`src/index.ts`](/src/index.ts)) for each current "term" (combination of year and semester, i.e. Fall 2021).
+It operates as a series of _steps_ that are processed after one another (see [`src/index.ts`](/src/index.ts)) for each current "term" (combination of year and semester, i.e. Fall 2021).
 
 In order to process the prerequisites data for each course (which comes in the form of a string like "Undergraduate Semester level CS 2340 Minimum Grade of C and Undergraduate Semester level LMC 3432 Minimum Grade of C" that can become much more complex), the crawler also utilizes an [ANTLR](https://www.antlr.org/) grammar and generated parser in order to convert the prerequisites data retrieved from Oscar into a normalized tree structure. The grammar itself and the generated parser/lexer code can be found in the [`src/steps/prereqs/grammar`](/src/steps/prereqs/grammar) folder.
 
@@ -50,6 +50,15 @@ yarn start
 ```
 
 After the crawler runs (which can take 10-20 minutes), a series of JSON files should have been created in a new `data` directory in the project root.
+
+### Linting
+
+The project uses pre-commit hooks using [Husky](https://typicode.github.io/husky/#/) and [`lint-staged`](https://www.npmjs.com/package/lint-staged) to run linting (via [ESLint](https://eslint.org/)) and formatting (via [Prettier](https://prettier.io/)). These can be run manually from the command line to format/lint the code on-demand, using the following commands:
+
+- `yarn run lint` - runs ESLint and reports all linting errors without fixing them
+- `yarn run lint:fix` - runs ESLint and reports all linting errors, attempting to fix any auto-fixable ones
+- `yarn run format` - runs Prettier and automatically formats the entire codebase
+- `yarn run format:check` - runs Prettier and reports formatting errors without fixing them
 
 ## 👩‍💻 Contributing
 

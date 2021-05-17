@@ -3,7 +3,12 @@
   "version": "1.0.0",
   "scripts": {
     "start": "ts-node src",
-    "gen-parser": "antlr4ts -visitor src/steps/prereqs/grammar/Prerequisites.g4"
+    "gen-parser": "antlr4ts -visitor src/steps/prereqs/grammar/Prerequisites.g4",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint \"src/**/*.ts\" --ignore-pattern \"src/steps/prereqs/grammar/**/*\"",
+    "lint:fix": "eslint \"src/**/*.ts\" --ignore-pattern \"src/steps/prereqs/grammar/**/*\" --fix",
+    "format": "prettier \"src/**/*.{ts,md,json}\" \"*.{ts,md,json}\" --write",
+    "format:check": "prettier \"src/**/*.{ts,md,json}\" \"*.{ts,md,json}\" --check"
   },
   "dependencies": {
     "antlr4ts": "^0.5.0-alpha.3",
@@ -11,8 +16,33 @@
   },
   "devDependencies": {
     "@types/node": "^14.0.24",
+    "@typescript-eslint/eslint-plugin": "^4.23.0",
+    "@typescript-eslint/parser": "^4.23.0",
     "antlr4ts-cli": "^0.5.0-alpha.3",
+    "eslint": "^7.26.0",
+    "eslint-config-airbnb-base": "^14.2.1",
+    "eslint-config-prettier": "^8.3.0",
+    "eslint-plugin-import": "^2.23.2",
+    "husky": "^4.0.0",
+    "lint-staged": "^11.0.0",
+    "prettier": "^2.3.0",
     "ts-node": "^8.10.2",
     "typescript": "^4"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged"
+    }
+  },
+  "lint-staged": {
+    "src/**/*.{js,ts}": [
+      "eslint"
+    ],
+    "src/**/*.{js,ts,md,json}": [
+      "prettier --write"
+    ],
+    "*.{js,ts,md,json}": [
+      "prettier --write"
+    ]
   }
 }
