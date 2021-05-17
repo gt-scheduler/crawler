@@ -112,13 +112,14 @@ export function parse(html: string, version: number): TermData {
     const gradeBasisIndex = cache(caches.gradeBases, gradeBasis);
 
     const meetings = meetingParts.map<Meeting>((meetingPart) => {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const [
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         _type,
         period,
         days,
         where,
         dateRange,
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         _scheduleType,
         instructorsString,
       ] = meetingPart
