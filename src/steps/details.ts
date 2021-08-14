@@ -21,7 +21,7 @@ export function downloadDetails(
   // that we don't get rate limited/run into issues with connection limits.
   // To solve this, we sleep for varying amounts
   return courseIds.map(async (courseId, i) => {
-    await new Promise(r => setTimeout(r, i * DELAY_PER_REQUEST));
+    await new Promise((r) => setTimeout(r, i * DELAY_PER_REQUEST));
     return downloadCourseDetails(term, courseId);
   });
 }
@@ -38,7 +38,9 @@ export async function downloadCourseDetails(
   // Attempt to split the course ID into its subject/number
   const splitResult = splitCourseId(courseId);
   if (splitResult === null) {
-    console.warn(`Could not split course ID '${courseId}'; skipping detail scraping for it`);
+    console.warn(
+      `Could not split course ID '${courseId}'; skipping detail scraping for it`
+    );
     return [courseId, ""];
   }
 
@@ -59,21 +61,25 @@ export async function downloadCourseDetails(
     // Use exponential backoff
     // (each promise ends up getting staggered
     //  so we shouldn't need any jitter to avoid a thundering herd)
-    const backoff = Math.pow(i, 2) * 4000;
-    if (backoff > 0) await new Promise(r => setTimeout(r, backoff));
+    const backoff = i ** 2 * 4000;
+    if (backoff > 0) await new Promise((r) => setTimeout(r, backoff));
 
     try {
       const requestResult = await axios.get<string>(url);
       return [courseId, requestResult.data];
     } catch (error) {
-      console.warn(`An error occurred while fetching details for course ${courseId}`);
+      console.warn(
+        `An error occurred while fetching details for course ${courseId}`
+      );
       if (i !== retries - 1) console.warn("Retrying after a backoff");
       lastError = error;
     }
   }
 
   // If we exited the loop, then reject the promise by throwing an error
-  console.error(`Exhausted retries for fetching details for course ${courseId}`);
+  console.error(
+    `Exhausted retries for fetching details for course ${courseId}`
+  );
   throw lastError;
 }
 

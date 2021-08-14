@@ -1,11 +1,13 @@
+/* eslint-disable max-classes-per-file */
+
 import {
   ANTLRErrorListener,
   CharStreams,
   CommonTokenStream,
-  RecognitionException,
   Recognizer,
 } from "antlr4ts";
 import { AbstractParseTreeVisitor } from "antlr4ts/tree/AbstractParseTreeVisitor";
+import { ATNSimulator } from "antlr4ts/atn/ATNSimulator";
 import { PrerequisitesLexer } from "./grammar/PrerequisitesLexer";
 import {
   AtomContext,
@@ -21,8 +23,8 @@ import {
   PrerequisiteCourse,
   PrerequisiteOperator,
   Prerequisites,
-  PrerequisiteSet
-} from '../../types';
+  PrerequisiteSet,
+} from "../../types";
 import { regexExec } from "../../utils";
 
 /**
@@ -107,10 +109,10 @@ function parseCoursePrereqs(html: string, courseId: string): Prerequisites {
 function cleanContents(contents: string): string {
   // Replace all occurrences of HTML elements
   // https://stackoverflow.com/a/15180206
-  contents = contents.replace(/<[^>]*>/g, "");
+  const replaced = contents.replace(/<[^>]*>/g, "");
 
   // Remove leading/trailing spaces
-  return contents.trim();
+  return replaced.trim();
 }
 
 /**
@@ -161,19 +163,19 @@ function flatten(source: PrerequisiteSet): PrerequisiteSet {
     const newChildren = [];
     for (const child of children) {
       const flattened = flattenInner(child);
-      if (isNullSet(flattened)) continue;
-
-      // If the child is an array and has the same operator,
-      // append its children to the current children array
-      if (
-        typeof flattened === "object" &&
-        Array.isArray(flattened) &&
-        flattened[0] === operator
-      ) {
-        newChildren.push(...flattened.slice(1));
-      } else {
-        // Otherwise, just add the child
-        newChildren.push(flattened);
+      if (!isNullSet(flattened)) {
+        // If the child is an array and has the same operator,
+        // append its children to the current children array
+        if (
+          typeof flattened === "object" &&
+          Array.isArray(flattened) &&
+          flattened[0] === operator
+        ) {
+          newChildren.push(...flattened.slice(1));
+        } else {
+          // Otherwise, just add the child
+          newChildren.push(flattened);
+        }
       }
     }
 
@@ -194,6 +196,7 @@ function flatten(source: PrerequisiteSet): PrerequisiteSet {
  */
 class ErrorListener implements ANTLRErrorListener<unknown> {
   courseId: string;
+
   original: string;
 
   constructor(courseId: string, original: string) {
@@ -202,12 +205,11 @@ class ErrorListener implements ANTLRErrorListener<unknown> {
   }
 
   public syntaxError<T>(
-    _recognizer: Recognizer<T, any>,
+    _recognizer: Recognizer<T, ATNSimulator>,
     _offendingSymbol: T,
     line: number,
     charPositionInLine: number,
-    msg: string,
-    _e: RecognitionException | undefined
+    msg: string
   ): void {
     const baseMessage = `line ${line}:${charPositionInLine} ${msg}`;
     console.error(
@@ -221,9 +223,10 @@ class ErrorListener implements ANTLRErrorListener<unknown> {
 // into the prefix-notation parsed version
 class PrefixNotationVisitor
   extends AbstractParseTreeVisitor<PrerequisiteClause>
-  implements PrerequisitesVisitor<PrerequisiteClause> {
+  implements PrerequisitesVisitor<PrerequisiteClause>
+{
   defaultResult(): PrerequisiteClause {
-    return (null as unknown) as PrerequisiteClause;
+    return null as unknown as PrerequisiteClause;
   }
 
   // Expression: logical disjunction (OR)
@@ -258,9 +261,11 @@ class PrefixNotationVisitor
 
     if (course != null) {
       return this.visit(course);
-    } else if (expression != null) {
+    }
+    if (expression != null) {
       return this.visit(expression);
-    } else if (test != null) {
+    }
+    if (test != null) {
       // Note: we ignore test atoms at the moment,
       // though this can be easily changed in the future
       return this.defaultResult();
@@ -276,7 +281,7 @@ class PrefixNotationVisitor
     const number = ctx.COURSE_NUMBER().toString();
 
     // There might not be a grade
-    let grade: MinimumGrade | undefined = undefined;
+    let grade: MinimumGrade | undefined;
     const gradeCtx = ctx.GRADE_LETTER();
     if (gradeCtx != null) {
       grade = gradeCtx.toString() as MinimumGrade;
