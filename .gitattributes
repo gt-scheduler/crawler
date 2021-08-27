@@ -1,0 +1,5 @@
+# Ignore everything in src/steps/prereqs/grammar because it is generated,
+# except for Prerequisites.g4 and README.md
+src/steps/prereqs/grammar/* linguist-generated
+src/steps/prereqs/grammar/Prerequisites.g4  -linguist-generated
+src/steps/prereqs/grammar/README.md -linguist-generated
