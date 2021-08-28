@@ -22,10 +22,12 @@ jobs:
         run: yarn start
 
       - name: Upload
-        uses: JamesIves/github-pages-deploy-action@releases/v3
+        uses: JamesIves/github-pages-deploy-action@releases/v4
         with:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          BRANCH: gh-pages
-          FOLDER: data
-          CLEAN: false
-          SINGLE_COMMIT: true
+          token: ${{ secrets.CRAWLER_DEPLOY_PERSONAL_ACCESS_TOKEN }}
+          branch: gh-pages
+          folder: data
+          clean: false
+          single-commit: true
+          git-config-name: gt-scheduler-bot
+          git-config-email: 89671168+gt-scheduler-bot@users.noreply.github.com
