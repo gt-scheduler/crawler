@@ -11,17 +11,26 @@ import {
   parseCoursePrereqs,
 } from "./steps";
 import { Prerequisites } from "./types";
-import { setLogFormat, isLogFormat, log, error, span, warn } from "./log";
-
-// Number of terms to scrape (scrapes most recent `NUM_TERMS`)
-const NUM_TERMS = 2;
+import {
+  setLogFormat,
+  isLogFormat,
+  log,
+  error,
+  span,
+  warn,
+  getLogFormat,
+} from "./log";
+import { getIntConfig } from "./utils";
 
 // Current scraped JSON version
 const CURRENT_VERSION = 2;
 
+// Number of terms to scrape (scrapes most recent `NUM_TERMS`)
+const NUM_TERMS = getIntConfig("NUM_TERMS") ?? 2;
+
 // IO Concurrency to download files using.
 // This is a completely arbitrary number.
-const DETAILS_CONCURRENCY = 256;
+const DETAILS_CONCURRENCY = getIntConfig("DETAILS_CONCURRENCY") ?? 128;
 
 async function main(): Promise<void> {
   const rawLogFormat = process.env.LOG_FORMAT;
@@ -35,6 +44,13 @@ async function main(): Promise<void> {
   } else {
     setLogFormat("text");
   }
+
+  log(`starting crawler`, {
+    currentVersion: CURRENT_VERSION,
+    numTerms: NUM_TERMS,
+    detailsConcurrency: DETAILS_CONCURRENCY,
+    logFormat: getLogFormat(),
+  });
 
   try {
     // Create a new top-level span for the entire crawler operation.

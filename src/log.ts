@@ -27,6 +27,13 @@ export function setLogFormat(newLogFormat: LogFormat): void {
 }
 
 /**
+ * Gets the current global log format
+ */
+export function getLogFormat(): LogFormat {
+  return logFormat;
+}
+
+/**
  * Base logging function that logs at level="info"
  * @param message - static message, used for grepping logs
  * @param fields - structured fields (should be string-serializable)

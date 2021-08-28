@@ -1,4 +1,5 @@
 import fs from "fs";
+import { error } from "./log";
 import { Location } from "./types";
 
 export function extract<T>(
@@ -66,4 +67,17 @@ export function regexExec(regex: RegExp, str: string): RegExpExecArray {
       "Regular expression '${}' failed to execute on string '${}'"
     );
   return result;
+}
+
+export function getIntConfig(key: string): number | null {
+  const value = process.env[key];
+  if (value == null) return null;
+  try {
+    return parseInt(value, 10);
+  } catch (err) {
+    error(`invalid integer config value provided`, err, { key, value });
+    process.exit(1);
+    // Unreachable
+    return null;
+  }
 }
