@@ -1,3 +1,4 @@
+import { warn } from "../../log";
 import { TermData } from "../../types";
 
 /**
@@ -9,14 +10,17 @@ import { TermData } from "../../types";
  */
 export function attachDescriptions(
   termData: TermData,
-  descriptions: Record<string, string>
+  descriptions: Record<string, string | null>
 ): void {
   Object.keys(descriptions).forEach((courseId) => {
+    // Skip null descriptions
+    if (descriptions[courseId] === null) return;
+
     if (courseId in termData.courses) {
       // eslint-disable-next-line no-param-reassign
       termData.courses[courseId][3] = descriptions[courseId];
     } else {
-      console.warn(`Received description for unknown course '${courseId}'`);
+      warn(`received description for unknown course`, { courseId });
     }
   });
 }

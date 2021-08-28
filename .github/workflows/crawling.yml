@@ -20,6 +20,8 @@ jobs:
 
       - name: Crawling
         run: yarn start
+        with:
+          LOG_FORMAT: json
 
       - name: Upload
         uses: JamesIves/github-pages-deploy-action@releases/v4

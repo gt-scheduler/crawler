@@ -1,3 +1,4 @@
+import { warn } from "../../log";
 import { TermData, Prerequisites } from "../../types";
 
 /**
@@ -18,9 +19,7 @@ export function attachPrereqs(
       // eslint-disable-next-line no-param-reassign
       termData.courses[courseId][2] = prerequisites[courseId];
     } else {
-      console.warn(
-        `Received prerequisite data for unknown course '${courseId}'`
-      );
+      warn(`received prerequisite data for unknown course`, { courseId });
     }
   });
 }

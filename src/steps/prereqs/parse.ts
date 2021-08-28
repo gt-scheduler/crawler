@@ -17,6 +17,7 @@ import {
   TermContext,
 } from "./grammar/PrerequisitesParser";
 import { PrerequisitesVisitor } from "./grammar/PrerequisitesVisitor";
+import { error } from "../../log";
 import {
   MinimumGrade,
   PrerequisiteClause,
@@ -27,24 +28,6 @@ import {
 } from "../../types";
 import { regexExec } from "../../utils";
 
-/**
- * Parses the HTML for each course detail page in parallel,
- * awaiting on all of them at the end to construct the global course id -> prereq map
- * @param promises - List of promises from downloadDetails(...)
- */
-export async function parsePrereqs(
-  promises: Promise<[courseId: string, html: string]>[]
-): Promise<Record<string, Prerequisites>> {
-  const allPrereqs: Record<string, Prerequisites> = {};
-  const parsePromises = promises.map(async (promise) => {
-    const [courseId, html] = await promise;
-    allPrereqs[courseId] = parseCoursePrereqs(html, courseId);
-  });
-
-  await Promise.all(parsePromises);
-  return allPrereqs;
-}
-
 const prereqSectionStart = `<SPAN class="fieldlabeltext">Prerequisites: </SPAN>`;
 const prereqSectionRegex = /<br \/>\s*(.*)\s*<br \/>/;
 
@@ -52,7 +35,10 @@ const prereqSectionRegex = /<br \/>\s*(.*)\s*<br \/>/;
  * Parses the HTML for a single course to get its prerequisites
  * @param html - Source HTML from the course details page
  */
-function parseCoursePrereqs(html: string, courseId: string): Prerequisites {
+export function parseCoursePrereqs(
+  html: string,
+  courseId: string
+): Prerequisites {
   const prereqFieldHeaderIndex = html.indexOf(prereqSectionStart);
   if (prereqFieldHeaderIndex === -1) {
     return [];
@@ -211,11 +197,12 @@ class ErrorListener implements ANTLRErrorListener<unknown> {
     charPositionInLine: number,
     msg: string
   ): void {
-    const baseMessage = `line ${line}:${charPositionInLine} ${msg}`;
-    console.error(
-      `An error occurred while parsing prerequisites for ${this.courseId}: ${baseMessage}`
-    );
-    console.error(`Original prerequisites text from Oscar: ${this.original}`);
+    error("an error occurred while parsing prerequisites", new Error(msg), {
+      line,
+      charPositionInLine,
+      courseId: this.courseId,
+      originalTextFromOscar: this.original,
+    });
   }
 }
 

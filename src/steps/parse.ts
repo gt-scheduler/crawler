@@ -1,5 +1,6 @@
 import { TermData, Course, Caches, Meeting, Section, Location } from "../types";
 import { cache, extract, match, regexExec } from "../utils";
+import { warn } from "../log";
 
 /*
  * A map consisting of course locations and corresponding coordinates
@@ -42,13 +43,15 @@ const courseLocations = new Map([
   ["Brittain T Room", new Location(33.77247, -84.391271)],
   ["Hefner Dormitory(HEF)", new Location(33.779159, -84.403952)],
   ["Old Civil Engr", new Location(33.7742, -84.394637)],
-  ["Ivan Allen College", new Location(33.773989, -84.404269)], // TODO: Verify this?
   ["West Village Dining Commons", new Location(33.779564, -84.404718)],
   ["Couch", new Location(33.778233, -84.404507)],
   ["J. S. Coon", new Location(33.77258, -84.395624)],
   ["575 Fourteenth Street", new Location(33.786914, -84.406213)],
   ["Groseclose", new Location(33.775778, -84.401885)],
   ["Theater for the Arts", new Location(33.775041, -84.399287)],
+  ["Habersham", new Location(33.773978, -84.404311)],
+  ["Savant", new Location(33.772075, -84.395277)],
+  ["ISyE Main", new Location(33.775178, -84.401879)],
 ]);
 
 export function parse(html: string, version: number): TermData {
@@ -64,7 +67,7 @@ export function parse(html: string, version: number): TermData {
   };
   const updatedAt = new Date();
 
-  const debugMissingLocations = new Map();
+  const missingLocations = new Set<string>();
 
   const startIndex = html.indexOf(
     '<caption class="captiontext">Sections Found</caption>'
@@ -125,7 +128,8 @@ export function parse(html: string, version: number): TermData {
       ] = meetingPart
         .split("\n")
         .slice(0, 7)
-        .map((row) => row.replace(/<\/?[^>]+(>|$)/g, ""));
+        .map((row) => row.replace(/<\/?[^>]+(>|$)/g, ""))
+        .map((row) => row.trim());
 
       // convert string location to latitude, longitude coordinates
       const locationName = Array.from(courseLocations.keys()).find((locName) =>
@@ -135,7 +139,7 @@ export function parse(html: string, version: number): TermData {
       if (locationName) {
         location = courseLocations.get(locationName);
       } else {
-        debugMissingLocations.set(where, false);
+        missingLocations.add(where);
       }
 
       const instructors = instructorsString.replace(/ +/g, " ").split(", ");
@@ -176,9 +180,12 @@ export function parse(html: string, version: number): TermData {
     ];
   });
 
-  if (debugMissingLocations.size > 0) {
-    console.log("Unknown class locations:");
-    console.log(debugMissingLocations.keys());
+  if (missingLocations.size > 0) {
+    warn(`encountered unknown class locations`, {
+      missingLocations: [...missingLocations.values()],
+      version,
+      updatedAt,
+    });
   }
 
   return { courses, caches, updatedAt, version };

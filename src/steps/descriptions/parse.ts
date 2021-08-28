@@ -1,25 +1,5 @@
+import { warn } from "../../log";
 import { regexExec } from "../../utils";
-
-/**
- * Parses the HTML for each course detail page in parallel,
- * awaiting on all of them at the end to construct the global course id -> description map
- * @param promises - List of promises from downloadDetails(...)
- */
-export async function parseDescriptions(
-  promises: Promise<[courseId: string, html: string]>[]
-): Promise<Record<string, string>> {
-  const allDescriptions: Record<string, string> = {};
-  const parsePromises = promises.map(async (promise) => {
-    const [courseId, html] = await promise;
-    const descriptionOption = parseCourseDescription(html, courseId);
-    if (descriptionOption != null) {
-      allDescriptions[courseId] = descriptionOption;
-    }
-  });
-
-  await Promise.all(parsePromises);
-  return allDescriptions;
-}
 
 const descriptionRegex = /<TD CLASS="ntdefault">([\s\S]*?)<br \/>/;
 
@@ -28,7 +8,10 @@ const descriptionRegex = /<TD CLASS="ntdefault">([\s\S]*?)<br \/>/;
  * @param html - Source HTML from the course details page
  * @param courseId - The joined course id (SUBJECT NUMBER); i.e. `"CS 2340"`
  */
-function parseCourseDescription(html: string, courseId: string): string | null {
+export function parseCourseDescription(
+  html: string,
+  courseId: string
+): string | null {
   try {
     // Get the first match of the description content regex
     const [, contents] = regexExec(descriptionRegex, html);
@@ -44,9 +27,7 @@ function parseCourseDescription(html: string, courseId: string): string | null {
 
     return trimmed;
   } catch {
-    console.warn(
-      `Could not execute course description regex for '${courseId}'`
-    );
+    warn(`could not execute course description regex`, { courseId });
     return null;
   }
 }
