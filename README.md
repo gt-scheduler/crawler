@@ -49,7 +49,25 @@ Then, to run the crawler, run:
 yarn start
 ```
 
-After the crawler runs (which can take 10-20 minutes), a series of JSON files should have been created in a new `data` directory in the project root.
+After the crawler runs, a series of JSON files should have been created in a new `data` directory in the project root.
+
+#### Utilizing structured logging
+
+By default, the crawler outputs standard log lines to the terminal in development. However, it also supports outputting structured JSON log events that can be more easily parsed and analyzed when debugging. This is turned on by default when the crawler is running in a GitHub Action (where the `LOG_FORMAT` environment variable is set to `json`), but it can also be enabled for development.
+
+The utility script `yarn start-logged` can be used to run the crawler and output JSON log lines to a logfile in the current working directory:
+
+```
+yarn start-logged
+```
+
+To analyze the JSON log lines data, I recommend using [`jq`](https://stedolan.github.io/jq/) since it is a powerful tool for parsing/analyzing JSON in the shell. The following command imports all lines in the latest log file and loads them all as one large array for further processing (**note**: this command will probably only work on Unix-like systems (Linux and probably macOS), so your mileage may vary. If you're running into issues, try running it on a Linux computer and make sure you have [`jq` installed](https://stedolan.github.io/jq/)):
+
+```sh
+cat $(find . -type f -name "*.log" | sort -n | tail -1) | jq -cs '.'
+```
+
+For some useful queries on the log data, see [📚 Useful queries on crawler logs](https://github.com/gt-scheduler/crawler/wiki/%F0%9F%93%9A-Useful-queries-on-crawler-logs).
 
 ### Linting
 
