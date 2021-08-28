@@ -20,7 +20,7 @@ jobs:
 
       - name: Crawling
         run: yarn start
-        with:
+        env:
           LOG_FORMAT: json
 
       - name: Upload
