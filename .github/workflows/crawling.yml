@@ -23,7 +23,7 @@ jobs:
         env:
           LOG_FORMAT: json
           NUM_TERMS: 2
-          DETAILS_CONCURRENCY: 128
+          DETAILS_CONCURRENCY: 256
 
       - name: Upload
         uses: JamesIves/github-pages-deploy-action@releases/v4
