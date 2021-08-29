@@ -2,7 +2,7 @@ name: Crawling
 on:
   push:
     branches:
-      - master
+      - main
   schedule:
     - cron: "*/30 * * * *"
 
