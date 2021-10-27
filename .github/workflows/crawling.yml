@@ -29,7 +29,7 @@ jobs:
         run: yarn start
         env:
           LOG_FORMAT: json
-          NUM_TERMS: 0
+          NUM_TERMS: 2
           DETAILS_CONCURRENCY: 256
           DATA_FOLDER: ./data
 
