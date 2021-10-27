@@ -41,6 +41,7 @@ jobs:
         with:
           token: ${{ secrets.CRAWLER_DEPLOY_PERSONAL_ACCESS_TOKEN }}
           branch: gh-pages
+          folder: .
           clean: true
           single-commit: true
           git-config-name: gt-scheduler-bot
