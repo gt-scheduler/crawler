@@ -2,12 +2,11 @@ import path from "path";
 import fs from "fs/promises";
 
 import { writeFile } from "../utils";
-import { dataPath } from "./write";
 import { log } from "../log";
 
-export async function writeIndex(): Promise<void> {
+export async function writeIndex(dataFolder: string): Promise<void> {
   // Find all term JSON files in the data directory
-  const files = await fs.readdir(dataPath);
+  const files = await fs.readdir(dataFolder);
   const dataFileRegex = /20[0-9]{4}.json/;
   const allDataFiles = files.filter((f) => f.match(dataFileRegex) !== null);
   const allTerms = allDataFiles.map((f) => f.substring(0, f.indexOf(".")));
@@ -16,13 +15,13 @@ export async function writeIndex(): Promise<void> {
     allDataFiles,
     allTerms,
     files,
-    dataPath,
+    dataFolder,
   });
 
   // Write the list of terms out to `index.json`
   const jsonData = {
     terms: allTerms,
   };
-  const termPath = path.resolve(dataPath, `index.json`);
+  const termPath = path.resolve(dataFolder, `index.json`);
   return writeFile(termPath, jsonData);
 }

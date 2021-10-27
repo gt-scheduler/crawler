@@ -3,12 +3,15 @@ import fs from "fs";
 import { TermData } from "../types";
 import { writeFile } from "../utils";
 
-export const dataPath = path.resolve(__dirname, "..", "..", "data");
-if (!fs.existsSync(dataPath)) {
-  fs.mkdirSync(dataPath);
-}
+export function write(
+  dataFolder: string,
+  term: string,
+  termData: TermData
+): Promise<void> {
+  if (!fs.existsSync(dataFolder)) {
+    fs.mkdirSync(dataFolder);
+  }
 
-export function write(term: string, termData: TermData): Promise<void> {
-  const termPath = path.resolve(dataPath, `${term}.json`);
+  const termPath = path.resolve(dataFolder, `${term}.json`);
   return writeFile(termPath, termData);
 }
