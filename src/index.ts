@@ -1,5 +1,4 @@
 import asyncPool from "tiny-async-pool";
-import path from "path";
 import {
   download,
   list,
@@ -34,10 +33,6 @@ const NUM_TERMS = getIntConfig("NUM_TERMS") ?? 2;
 // This is a completely arbitrary number.
 const DETAILS_CONCURRENCY = getIntConfig("DETAILS_CONCURRENCY") ?? 128;
 
-// Location to output crawled files
-const DATA_FOLDER =
-  process.env["DATA_FOLDER"] ?? path.resolve(__dirname, "..", "data");
-
 async function main(): Promise<void> {
   const rawLogFormat = process.env.LOG_FORMAT;
   if (rawLogFormat != null) {
@@ -55,7 +50,6 @@ async function main(): Promise<void> {
     currentVersion: CURRENT_VERSION,
     numTerms: NUM_TERMS,
     detailsConcurrency: DETAILS_CONCURRENCY,
-    dataFolder: DATA_FOLDER,
     logFormat: getLogFormat(),
   });
 
@@ -99,7 +93,7 @@ async function crawl(): Promise<void> {
   );
 
   // Output a JSON file containing all of the scraped term files
-  await writeIndex(DATA_FOLDER);
+  await writeIndex();
 }
 
 async function crawlTerm(
@@ -161,7 +155,7 @@ async function crawlTerm(
   );
 
   await span(`writing scraped data to disk`, spanFields, () =>
-    write(DATA_FOLDER, term, termData)
+    write(term, termData)
   );
 }
 
