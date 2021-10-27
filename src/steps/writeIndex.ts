@@ -10,7 +10,7 @@ export async function writeIndex(): Promise<void> {
   const files = await fs.readdir(dataPath);
   const dataFileRegex = /20[0-9]{4}.json/;
   const allDataFiles = files.filter((f) => f.match(dataFileRegex) !== null);
-  const allTerms = files.map((f) => f.substring(0, f.indexOf(".")));
+  const allTerms = allDataFiles.map((f) => f.substring(0, f.indexOf(".")));
 
   log("identified term data files in output directory", {
     allDataFiles,
