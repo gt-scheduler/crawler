@@ -9,6 +9,7 @@ import {
   write,
   parseCourseDescription,
   parseCoursePrereqs,
+  writeIndex,
 } from "./steps";
 import { Prerequisites } from "./types";
 import {
@@ -90,6 +91,9 @@ async function crawl(): Promise<void> {
       );
     })
   );
+
+  // Output a JSON file containing all of the scraped term files
+  await writeIndex();
 }
 
 async function crawlTerm(

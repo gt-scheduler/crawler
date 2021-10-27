@@ -3,7 +3,7 @@ import fs from "fs";
 import { TermData } from "../types";
 import { writeFile } from "../utils";
 
-const dataPath = path.resolve(__dirname, "..", "..", "data");
+export const dataPath = path.resolve(__dirname, "..", "..", "data");
 if (!fs.existsSync(dataPath)) {
   fs.mkdirSync(dataPath);
 }
