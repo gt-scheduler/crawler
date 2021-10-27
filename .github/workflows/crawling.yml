@@ -15,6 +15,16 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Checkout data
+        uses: actions/checkout@v2
+        with:
+          persist-credentials: false
+          ref: gh-pages
+          path: /etc/gt-scheduler/crawler/data
+
+      - name: Remove data/.git
+        run: rm -rf /etc/gt-scheduler/crawler/data/.git
+
       - name: Install
         run: yarn install --frozen-lockfile
 
@@ -24,14 +34,15 @@ jobs:
           LOG_FORMAT: json
           NUM_TERMS: 2
           DETAILS_CONCURRENCY: 256
+          DATA_FOLDER: /etc/gt-scheduler/crawler/data
 
       - name: Upload
         uses: JamesIves/github-pages-deploy-action@releases/v4
         with:
           token: ${{ secrets.CRAWLER_DEPLOY_PERSONAL_ACCESS_TOKEN }}
           branch: gh-pages
-          folder: data
-          clean: false
+          folder: /etc/gt-scheduler/crawler/data
+          clean: true
           single-commit: true
           git-config-name: gt-scheduler-bot
           git-config-email: 89671168+gt-scheduler-bot@users.noreply.github.com
