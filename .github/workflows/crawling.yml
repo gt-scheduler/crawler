@@ -32,7 +32,7 @@ jobs:
         working-directory: ./runner
         env:
           LOG_FORMAT: json
-          NUM_TERMS: 2
+          NUM_TERMS: 0
           DETAILS_CONCURRENCY: 256
           DATA_FOLDER: ../data
 
@@ -41,8 +41,8 @@ jobs:
         with:
           token: ${{ secrets.CRAWLER_DEPLOY_PERSONAL_ACCESS_TOKEN }}
           branch: gh-pages
-          folder: ./data
           clean: true
           single-commit: true
           git-config-name: gt-scheduler-bot
           git-config-email: 89671168+gt-scheduler-bot@users.noreply.github.com
+          workspace: ./data
