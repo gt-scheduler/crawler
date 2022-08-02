@@ -20,15 +20,15 @@ rules:
 
   # Too pedantic / sometimes encourages Node anti-patterns
   import/prefer-default-export: off
-  no-await-in-loop: 0
-  no-restricted-syntax: 0
-  class-methods-use-this: 0
+  no-await-in-loop: off
+  no-restricted-syntax: off
+  class-methods-use-this: off
   no-plusplus:
     - error
     - allowForLoopAfterthoughts: true
 
   # Configure no-use-before-define
-  no-use-before-define: 0
+  no-use-before-define: off
   "@typescript-eslint/no-use-before-define":
     - error
     - typedefs: false
