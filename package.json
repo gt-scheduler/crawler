@@ -4,10 +4,10 @@
   "scripts": {
     "start": "ts-node src/index.ts",
     "start-logged": "logfile=\"$(date --iso-8601=seconds).log\"; echo \"Logging to '$logfile'\"; LOG_FORMAT=json ts-node src > \"$logfile\" 2>&1; echo 'Done'",
-    "gen-parser": "antlr4ts -visitor src/steps/prereqs/grammar/Prerequisites.g4",
+    "gen-parser": "ts-node scripts/gen-parser.ts",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint --ext .js,.ts . --ignore-pattern \"src/steps/prereqs/grammar/**/*\"",
-    "lint:fix": "eslint --ext .js,.ts . --ignore-pattern \"src/steps/prereqs/grammar/**/*\" --fix",
+    "lint": "eslint --ext .js,.ts .",
+    "lint:fix": "eslint--ext .js,.ts . --fix",
     "format": "prettier \"**/*.{js,ts,md,json,yaml}\" --write",
     "format:check": "prettier \"**/*.{js,ts,md,json,yaml}\" --check"
   },
@@ -27,6 +27,7 @@
     "@typescript-eslint/eslint-plugin": "^5.32.0",
     "@typescript-eslint/parser": "^5.32.0",
     "antlr4ts-cli": "^0.5.0-alpha.3",
+    "chalk": "^4",
     "eslint": "^8.21.0",
     "eslint-config-airbnb-base": "^15.0.0",
     "eslint-config-prettier": "^8.3.0",

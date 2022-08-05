@@ -36,6 +36,15 @@ rules:
       functions: false
       classes: false
 
+overrides:
+  # Disable some rules for scripts/
+  - files: "scripts/**/*.ts"
+    rules:
+      # Allow using devDependencies in scripts
+      import/no-extraneous-dependencies: off
+      # Allow console.log in scripts
+      no-console: off
+
 # ESLint Project Settings
 settings:
   import/parsers:
