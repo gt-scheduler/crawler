@@ -1,0 +1,63 @@
+name: Continuous Integration
+on: [pull_request]
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Install
+        run: yarn install --frozen-lockfile
+        id: install
+
+      - name: Run prettier
+        run: yarn run format:check
+
+      - name: Run ESLint
+        run: yarn run lint
+        # Always run the linter, even if prettier failed
+        if: ${{ steps.install.outcome == 'success' }}
+
+  build:
+    name: Typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Install
+        run: yarn install --frozen-lockfile
+
+      - name: Build
+        run: yarn run typecheck
+
+  check-generated:
+    name: Check generated
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Install
+        run: yarn install --frozen-lockfile
+
+      # Check that the generated prereq files are up-to-date
+      - name: Run gen-parser
+        run: yarn run gen-parser
+      - name: Get changed files
+        uses: tj-actions/verify-changed-files@v10.1
+        id: verify-gen-parser
+        with:
+          files: |
+            src/steps/prereqs/grammar
+      - name: Ensure generated prereq files are up-to-date
+        if: ${{ steps.verify-gen-parser.files_changed == 'true' }}
+        uses: actions/github-script@v3
+        with:
+          script: |
+            core.setFailed("Generated prereq files are out of date\n" +
+                           "Run 'yarn run gen-parser' and commit the changes.\n" +
+                           "Out-of-date files: ${{ steps.gen-parser.outputs.changed_files }}");
