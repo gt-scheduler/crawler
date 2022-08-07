@@ -1,5 +1,5 @@
 import fs from "fs";
-import { error } from "./log";
+import Log from "./log";
 
 import type { Location } from "./types";
 
@@ -79,7 +79,7 @@ export function getIntConfig(key: string): number | null {
   try {
     return parseInt(value, 10);
   } catch (err) {
-    error(`invalid integer config value provided`, err, { key, value });
+    Log.error(`invalid integer config value provided`, err, { key, value });
     process.exit(1);
   }
 }

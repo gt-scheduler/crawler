@@ -11,15 +11,7 @@ import {
   parseCoursePrereqs,
   writeIndex,
 } from "./steps";
-import {
-  setLogFormat,
-  isLogFormat,
-  log,
-  error,
-  span,
-  warn,
-  getLogFormat,
-} from "./log";
+import Log from "./log";
 import { getIntConfig } from "./utils";
 
 import type { Prerequisites } from "./types";
@@ -35,61 +27,59 @@ const NUM_TERMS = getIntConfig("NUM_TERMS") ?? 2;
 const DETAILS_CONCURRENCY = getIntConfig("DETAILS_CONCURRENCY") ?? 128;
 
 async function main(): Promise<void> {
+  let logFormat: "text" | "json" = "text";
   const rawLogFormat = process.env["LOG_FORMAT"];
-  if (rawLogFormat != null) {
-    if (isLogFormat(rawLogFormat)) {
-      setLogFormat(rawLogFormat);
+  if (rawLogFormat !== undefined) {
+    if (rawLogFormat === "text" || rawLogFormat === "json") {
+      logFormat = rawLogFormat;
     } else {
-      warn(`invalid log format provided`, { logFormat: rawLogFormat });
+      // TODO use different log level here.
+      Log.warn(`invalid log format provided`, { logFormat: rawLogFormat });
       process.exit(1);
     }
-  } else {
-    setLogFormat("text");
   }
+  Log.configure({ format: logFormat });
 
-  log(`starting crawler`, {
+  Log.info(`starting crawler`, {
     currentVersion: CURRENT_VERSION,
     numTerms: NUM_TERMS,
     detailsConcurrency: DETAILS_CONCURRENCY,
-    logFormat: getLogFormat(),
+    logFormat,
   });
 
   try {
-    // Create a new top-level span for the entire crawler operation.
-    // This simply logs when before/after the operation
-    // so we know how long it took.
-    await span(`crawling Oscar`, {}, async () => crawl());
+    const crawlingTimer = Log.startTimer();
+    await crawl();
+    crawlingTimer.done("finished crawling Oscar");
     process.exit(0);
   } catch (err) {
-    error(`a fatal error occurred while running the crawler`, err);
+    Log.error(`a fatal error occurred while running the crawler`, err);
     process.exit(1);
   }
 }
 
 async function crawl(): Promise<void> {
-  const termsToScrape = await span(
-    `listing all terms`,
-    {},
-    async (setFinishFields) => {
-      const terms = await list();
-      const recentTerms = terms.slice(0, NUM_TERMS);
-      setFinishFields({ terms, recentTerms, desiredNumTerms: NUM_TERMS });
-      return recentTerms;
-    }
-  );
+  const listTimer = Log.startTimer();
+  const terms = await list();
+  const recentTerms = terms.slice(0, NUM_TERMS);
+  listTimer.done("finished listing all terms", {
+    terms,
+    recentTerms,
+    desiredNumTerms: NUM_TERMS,
+  });
 
   // Scrape each term in parallel
   await Promise.all(
-    termsToScrape.map(async (term) => {
+    recentTerms.map(async (term) => {
       // Set the base fields that are added to every span
       const termSpanFields: Record<string, unknown> = {
         term,
         version: CURRENT_VERSION,
       };
 
-      await span(`crawling term`, termSpanFields, () =>
-        crawlTerm(term, termSpanFields)
-      );
+      const termCrawlTimer = Log.startTimer();
+      await crawlTerm(term, termSpanFields);
+      termCrawlTimer.done("finished crawling term", termSpanFields);
     })
   );
 
@@ -105,19 +95,23 @@ async function crawlTerm(
   let spanFields = baseSpanFields;
 
   // Download the term HTML page containing every course.
-  const html = await span(`downloading term`, spanFields, () => download(term));
+  const downloadTimer = Log.startTimer();
+  const html = await download(term);
+  downloadTimer.done("finished downloading term", spanFields);
 
-  const termData = await span(`parsing term data to JSON`, spanFields, () =>
-    parse(html, CURRENT_VERSION)
-  );
+  const parsingTimer = Log.startTimer();
+  const termData = await parse(html, CURRENT_VERSION);
+  parsingTimer.done(`parsing term data to JSON`, spanFields);
 
   const allCourseIds = Object.keys(termData.courses);
   const courseIdCount = allCourseIds.length;
   spanFields = { ...spanFields, courseIdCount };
-  log(`collected all course ids`, { allCourseIds, ...spanFields });
+  Log.info(`collected all course ids`, { allCourseIds, ...spanFields });
 
   const allPrereqs: Record<string, Prerequisites | []> = {};
   const allDescriptions: Record<string, string | null> = {};
+  const detailsTimer = Log.startTimer();
+  Log.info("");
   await span(
     `downloading & parsing prerequisite info & course descriptions`,
     { ...spanFields, concurrency: DETAILS_CONCURRENCY },
