@@ -1,5 +1,5 @@
 // Generated from src/steps/prereqs/grammar/Prerequisites.g4 by ANTLR 4.7.3-SNAPSHOT
-
+// @ts-nocheck
 
 import { ParseTreeVisitor } from "antlr4ts/tree/ParseTreeVisitor";
 

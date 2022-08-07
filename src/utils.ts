@@ -1,6 +1,7 @@
 import fs from "fs";
 import { error } from "./log";
-import { Location } from "./types";
+
+import type { Location } from "./types";
 
 export function extract<T>(
   text: string,
@@ -20,7 +21,10 @@ export function extract<T>(
 
 export function match(text: string, regexp: RegExp): string | null {
   const results = regexp.exec(text);
-  return results && results[1];
+  if (results !== null) {
+    return results[1] ?? null;
+  }
+  return null;
 }
 
 export function cache(
@@ -77,7 +81,5 @@ export function getIntConfig(key: string): number | null {
   } catch (err) {
     error(`invalid integer config value provided`, err, { key, value });
     process.exit(1);
-    // Unreachable
-    return null;
   }
 }

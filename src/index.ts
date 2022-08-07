@@ -11,7 +11,6 @@ import {
   parseCoursePrereqs,
   writeIndex,
 } from "./steps";
-import { Prerequisites } from "./types";
 import {
   setLogFormat,
   isLogFormat,
@@ -22,6 +21,8 @@ import {
   getLogFormat,
 } from "./log";
 import { getIntConfig } from "./utils";
+
+import type { Prerequisites } from "./types";
 
 // Current scraped JSON version
 const CURRENT_VERSION = 2;
@@ -34,7 +35,7 @@ const NUM_TERMS = getIntConfig("NUM_TERMS") ?? 2;
 const DETAILS_CONCURRENCY = getIntConfig("DETAILS_CONCURRENCY") ?? 128;
 
 async function main(): Promise<void> {
-  const rawLogFormat = process.env.LOG_FORMAT;
+  const rawLogFormat = process.env["LOG_FORMAT"];
   if (rawLogFormat != null) {
     if (isLogFormat(rawLogFormat)) {
       setLogFormat(rawLogFormat);

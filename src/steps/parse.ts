@@ -1,6 +1,8 @@
-import { TermData, Course, Caches, Meeting, Section, Location } from "../types";
+import { Location } from "../types";
 import { cache, extract, match, regexExec } from "../utils";
 import { warn } from "../log";
+
+import type { TermData, Course, Caches, Meeting, Section } from "../types";
 
 /*
  * A map consisting of course locations and corresponding coordinates
@@ -83,11 +85,21 @@ export function parse(html: string, version: number): TermData {
   sections.forEach((section) => {
     const [titlePart, descriptionPart, , ...meetingParts] =
       section.split("<tr>\n");
+    // TODO(jazeved0) add logging if parsing fails
+    if (titlePart == null || descriptionPart == null) return;
 
     const [, courseTitle, crn, courseId, sectionId] = regexExec(
       /^<a href=".+">(.+) - (\d{5}) - (\w+ \w+) - (.+)<\/a>/,
       titlePart
     );
+    // TODO(jazeved0) add logging if parsing fails
+    if (
+      courseTitle == null ||
+      crn == null ||
+      courseId == null ||
+      sectionId == null
+    )
+      return;
 
     const fields: Record<string, string | undefined> = extract(
       descriptionPart,
@@ -96,7 +108,8 @@ export function parse(html: string, version: number): TermData {
         const [, key, value] = results;
         return { key, value };
       }
-    ).reduce((acc, { key, value }) => ({ ...acc, [key]: value }), {});
+      // TODO(jazeved0) add logging if key is nil
+    ).reduce((acc, { key, value }) => ({ ...acc, [key ?? ""]: value }), {});
     const attributesKey = "Attributes";
     const attributes =
       fields[attributesKey]?.split(",").map((attribute) => attribute.trim()) ??
@@ -115,7 +128,8 @@ export function parse(html: string, version: number): TermData {
     const gradeBasisIndex = cache(caches.gradeBases, gradeBasis);
 
     const meetings = meetingParts.map<Meeting>((meetingPart) => {
-      const [
+      // TODO(jazeved0) refactor so that this doesn't need to be mutable
+      let [
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         _type,
         period,
@@ -130,10 +144,17 @@ export function parse(html: string, version: number): TermData {
         .slice(0, 7)
         .map((row) => row.replace(/<\/?[^>]+(>|$)/g, ""))
         .map((row) => row.trim());
+      // TODO(jazeved0) add logging if parsing fails
+      if (instructorsString == null) instructorsString = "";
+      if (period == null) period = "";
+      if (dateRange == null) dateRange = "";
+      if (where == null) where = "";
+      if (days == null) days = "";
 
       // convert string location to latitude, longitude coordinates
       const locationName = Array.from(courseLocations.keys()).find((locName) =>
-        where.includes(locName)
+        // TODO(jazeved0) refactor so that we don't need this coalesce
+        (where ?? "").includes(locName)
       );
       let location;
       if (locationName) {
@@ -157,10 +178,11 @@ export function parse(html: string, version: number): TermData {
       ];
     });
 
-    if (!(courseId in courses)) {
+    let course = courses[courseId];
+    if (course === undefined) {
       const title = courseTitle;
       const sectionsMap: Record<string, Section> = {};
-      courses[courseId] = [
+      course = [
         title,
         sectionsMap,
         // Start off with an empty prerequisites array
@@ -168,8 +190,10 @@ export function parse(html: string, version: number): TermData {
         // Start off with no description
         null,
       ];
+      courses[courseId] = course;
     }
-    courses[courseId][1][sectionId] = [
+
+    course[1][sectionId] = [
       crn,
       meetings,
       credits,

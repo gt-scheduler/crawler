@@ -1,5 +1,6 @@
 import { warn } from "../../log";
-import { TermData } from "../../types";
+
+import type { TermData } from "../../types";
 
 /**
  * Attaches course descriptions to the data for the current term in-place
@@ -13,12 +14,20 @@ export function attachDescriptions(
   descriptions: Record<string, string | null>
 ): void {
   Object.keys(descriptions).forEach((courseId) => {
-    // Skip null descriptions
-    if (descriptions[courseId] === null) return;
+    const courseDescription = descriptions[courseId];
+    if (courseDescription === undefined) {
+      throw new Error(
+        `invariant violated: description map value not found inside iterator, courseId=${courseId}`
+      );
+    }
 
-    if (courseId in termData.courses) {
+    // Skip null descriptions
+    if (courseDescription === null) return;
+
+    const course = termData.courses[courseId];
+    if (course !== undefined) {
       // eslint-disable-next-line no-param-reassign
-      termData.courses[courseId][3] = descriptions[courseId];
+      course[3] = courseDescription;
     } else {
       warn(`received description for unknown course`, { courseId });
     }

@@ -128,7 +128,7 @@ export function errorFields(
   };
 
   if (includeStack) {
-    fields.stack = stack;
+    fields["stack"] = stack;
   }
 
   return fields;

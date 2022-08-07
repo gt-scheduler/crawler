@@ -1,5 +1,6 @@
 import { warn } from "../../log";
-import { TermData, Prerequisites } from "../../types";
+
+import type { TermData, Prerequisites } from "../../types";
 
 /**
  * Attaches course prerequisites to the data for the current term in-place
@@ -15,9 +16,17 @@ export function attachPrereqs(
   // attach it to the corresponding course
   // (mutate in-place)
   Object.keys(prerequisites).forEach((courseId) => {
-    if (courseId in termData.courses) {
+    const coursePrereqs = prerequisites[courseId];
+    if (coursePrereqs === undefined) {
+      throw new Error(
+        `invariant violated: description map value not found inside iterator, courseId=${courseId}`
+      );
+    }
+
+    const course = termData.courses[courseId];
+    if (course !== undefined) {
       // eslint-disable-next-line no-param-reassign
-      termData.courses[courseId][2] = prerequisites[courseId];
+      course[2] = coursePrereqs;
     } else {
       warn(`received prerequisite data for unknown course`, { courseId });
     }

@@ -63,5 +63,6 @@ function splitCourseId(
 ): [subject: string, number: string] | null {
   const splitResult = courseId.split(" ");
   if (splitResult.length !== 2) return null;
-  return [splitResult[0], splitResult[1]];
+  // These coalescing operators are no-ops
+  return [splitResult[0] ?? "", splitResult[1] ?? ""];
 }

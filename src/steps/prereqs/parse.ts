@@ -1,24 +1,22 @@
 /* eslint-disable max-classes-per-file */
 
-import {
-  ANTLRErrorListener,
-  CharStreams,
-  CommonTokenStream,
-  Recognizer,
-} from "antlr4ts";
+import { CharStreams, CommonTokenStream } from "antlr4ts";
 import { AbstractParseTreeVisitor } from "antlr4ts/tree/AbstractParseTreeVisitor";
-import { ATNSimulator } from "antlr4ts/atn/ATNSimulator";
 import { PrerequisitesLexer } from "./grammar/PrerequisitesLexer";
-import {
+import { PrerequisitesParser } from "./grammar/PrerequisitesParser";
+import { error } from "../../log";
+import { regexExec } from "../../utils";
+
+import type { ANTLRErrorListener, Recognizer } from "antlr4ts";
+import type { ATNSimulator } from "antlr4ts/atn/ATNSimulator";
+import type {
   AtomContext,
   CourseContext,
   ExpressionContext,
-  PrerequisitesParser,
   TermContext,
 } from "./grammar/PrerequisitesParser";
-import { PrerequisitesVisitor } from "./grammar/PrerequisitesVisitor";
-import { error } from "../../log";
-import {
+import type { PrerequisitesVisitor } from "./grammar/PrerequisitesVisitor";
+import type {
   MinimumGrade,
   PrerequisiteClause,
   PrerequisiteCourse,
@@ -26,7 +24,6 @@ import {
   Prerequisites,
   PrerequisiteSet,
 } from "../../types";
-import { regexExec } from "../../utils";
 
 const prereqSectionStart = `<SPAN class="fieldlabeltext">Prerequisites: </SPAN>`;
 const prereqSectionRegex = /<br \/>\s*(.*)\s*<br \/>/;
@@ -51,7 +48,8 @@ export function parseCoursePrereqs(
   );
 
   // Clean up the contents to remove the links and get plaintext
-  const cleaned = cleanContents(contents);
+  // TODO(jazeved0) add logging if parsing fails
+  const cleaned = cleanContents(contents ?? "");
 
   // Create the lexer and parser using the ANTLR 4 grammar defined in ./grammar
   // (using antlr4ts: https://github.com/tunnelvisionlabs/antlr4ts)
@@ -141,8 +139,14 @@ function flatten(source: PrerequisiteSet): PrerequisiteSet {
     const [operator, ...children] = clause;
 
     // Check for singular `PrerequisiteSet`s
-    if (children.length === 1) {
-      return flattenInner(children[0]);
+    if (children.length <= 1) {
+      const first = children[0];
+      if (first === undefined) {
+        throw new Error(
+          "invariant violated: PrerequsitieSet had no sub-clauses"
+        );
+      }
+      return flattenInner(first);
     }
 
     // Check for nested `PrerequisiteSet`s that have the same operator
@@ -266,14 +270,14 @@ class PrefixNotationVisitor
     // using the format expected by the API
     const subject = ctx.COURSE_SUBJECT().toString();
     const number = ctx.COURSE_NUMBER().toString();
+    const clause: PrerequisiteClause = { id: `${subject} ${number}` };
 
     // There might not be a grade
-    let grade: MinimumGrade | undefined;
     const gradeCtx = ctx.GRADE_LETTER();
     if (gradeCtx != null) {
-      grade = gradeCtx.toString() as MinimumGrade;
+      clause.grade = gradeCtx.toString() as MinimumGrade;
     }
 
-    return { id: `${subject} ${number}`, grade };
+    return clause;
   }
 }

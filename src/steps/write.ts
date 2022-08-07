@@ -1,7 +1,8 @@
 import path from "path";
 import fs from "fs";
-import { TermData } from "../types";
 import { writeFile } from "../utils";
+
+import type { TermData } from "../types";
 
 export const dataPath = path.resolve(__dirname, "..", "..", "data");
 if (!fs.existsSync(dataPath)) {

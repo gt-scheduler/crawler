@@ -1,6 +1,5 @@
 import path from "path";
 import fs from "fs/promises";
-
 import { writeFile } from "../utils";
 import { dataPath } from "./write";
 import { log } from "../log";

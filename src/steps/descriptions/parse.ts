@@ -17,7 +17,8 @@ export function parseCourseDescription(
     const [, contents] = regexExec(descriptionRegex, html);
 
     // Clean up the contents to remove HTML elements and get plaintext
-    const withoutHtml = contents.replace(/<[^>]*>/g, "");
+    // TODO(jazeved0) add logging if parsing fails
+    const withoutHtml = (contents ?? "").replace(/<[^>]*>/g, "");
     const trimmed = withoutHtml.trim();
 
     // Only return the description if it is non-empty
