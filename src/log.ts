@@ -1,310 +1,265 @@
-import process from "process";
 import safeStringify from "fast-safe-stringify";
+import { AsyncLocalStorage } from "node:async_hooks";
+import winston from "winston";
 
-export type LogFormat = "json" | "text";
-
-let logFormat: LogFormat = "text";
-
-/**
- * Custom type guard for determining if a string is a valid log format
- */
-export function isLogFormat(rawLogFormat: string): rawLogFormat is LogFormat {
-  switch (rawLogFormat) {
-    case "json":
-    case "text":
-      return true;
-    default:
-      return false;
-  }
+export interface LogOptions {
+  /**
+   * Output type to use for log messages. Use 'json' in production, and 'text'
+   * in development.
+   */
+  format: "json" | "text";
 }
 
 /**
- * Sets the global log format used for any future calls to `log`,
- * its derivatives, or any Span functions
+ * Log is an interface for a simple wrapper around winston.Logger that supports
+ * running async blocks of code with a base set of fields that get attached to
+ * any log messages emitted from within that block of code (see
+ * {@link Log.runWithLogFields}).
+ *
+ * This is powerful, and lets you attach useful context of a parent asynchronous
+ * operation before dispatching child operation(s) (without needing to pipe that
+ * context through as additional function arguments).
+ *
+ * A default logger is set up statically, but should be configured using
+ * {@link Log.configure} once the correct options have been resolved.
+ *
+ * This class is static (instead of needing an instance wired through whereever
+ * the ability to log things is sought) primarily for convenience. This slightly
+ * complicates tracking /which/ logger is being used, since the logger can be
+ * changed via calls to {@link Log.configure}, but I (@jazeved0) think this is a
+ * reasonable tradeoff.
+ *
+ * @example
+ * import Log from "../log";
+ *
+ * // Log a simple informational message with simple fields
+ * Log.info("starting to coalesce gadget groups", { foo: "123", bar: 6.28 });
+ * // Log a warning message, with no fields
+ * Log.warn("could not obtain list of gadgets to coalesce; falling back to default");
+ * // Log an exception (error), which will include its stack trace
+ * try {
+ *   throw new Error("RPC timeout");
+ * } catch (err) {
+ *   Log.error("an error occurred while communicating with coalesce-srv", err, {
+ *     baz: "FormGadgetGroups"
+ *   });
+ * }
  */
-export function setLogFormat(newLogFormat: LogFormat): void {
-  logFormat = newLogFormat;
-}
-
-/**
- * Gets the current global log format
- */
-export function getLogFormat(): LogFormat {
-  return logFormat;
-}
-
-/**
- * Base logging function that logs at level="info"
- * @param message - static message, used for grepping logs
- * @param fields - structured fields (should be string-serializable)
- */
-export function log(
-  message: string,
-  fields: Record<string, unknown> = {}
-): void {
-  if (logFormat === "json") {
-    // eslint-disable-next-line no-console
-    console.log(
-      safeStringify({
-        ts: new Date().toISOString(),
-        message,
-        level: "info",
-        ...fields,
-      })
-    );
-  } else {
-    const fieldsAsStrings: Record<string, string> = {
-      level: "info",
-    };
-    Object.entries(fields).forEach(([key, value]) => {
-      if (typeof value === "object") {
-        fieldsAsStrings[key] = safeStringify(value);
-      } else {
-        fieldsAsStrings[key] = String(value);
-      }
-    });
-
-    // eslint-disable-next-line no-console
-    console.log(
-      [
-        `[${new Date().toISOString()}]`,
-        message,
-        ...Object.entries(fieldsAsStrings).map(
-          ([key, value]) => `${key}='${value}'`
-        ),
-      ].join(" ")
-    );
-  }
-}
-
-/**
- * Base logging function that logs at level="info"
- * @param message - static message, used for grepping logs
- * @param fields - structured fields (should be string-serializable)
- */
-export function info(
-  message: string,
-  fields: Record<string, unknown> = {}
-): void {
-  log(message, fields);
-}
-
-/**
- * Base logging function that logs at level="warn"
- * @param message - static message, used for grepping logs
- * @param fields - structured fields (should be string-serializable)
- */
-export function warn(
-  message: string,
-  fields: Record<string, unknown> = {}
-): void {
-  log(message, { level: "warn", ...fields });
-}
-
-/**
- * Performs a best-effort serialization of the error into structured fields
- * @param err - the raw error object or unknown
- * @param includeStack - whether to include the stacktrace in "stack"
- * @returns a structured log fields record
- */
-export function errorFields(
-  err: unknown,
-  includeStack = false
-): Record<string, unknown> {
-  const { message: errorMessage, stack } = err as {
-    message?: string;
-    stack?: string;
-  };
-
-  // Perform a best-effort serialization of the error
-  let errorAsString = String(err);
-  if (errorAsString === "[object Object]") {
-    errorAsString = safeStringify(err);
-  }
-
-  const fields: Record<string, unknown> = {
-    error: errorAsString,
-    errorMessage,
-  };
-
-  if (includeStack) {
-    fields["stack"] = stack;
-  }
-
-  return fields;
-}
-
-/**
- * Base logging function that logs at level="error",
- * including explicit error-related fields.
- * @param message - static message, used for grepping logs
- * @param err - error object or null/undefined
- * @param fields - structured fields (should be string-serializable)
- */
-export function error(
-  message: string,
-  err: unknown,
-  fields: Record<string, unknown> = {}
-): void {
-  log(message, {
-    level: "error",
-    ...errorFields(err, true),
-    ...fields,
+export default class Log {
+  // Start off execution with a default logger,
+  // that will get replaced with a call to `Log.configure(...)`.
+  private static logger: winston.Logger = this.makeLogger({
+    format: "text",
   });
-}
 
-/**
- * Creates a new span with the given base message, starting it immediately
- * @param baseMessage - static message, used for grepping logs
- * @param fields - structured fields (should be string-serializable)
- * @returns a new `Span` instance
- */
-export function startSpan(
-  baseMessage: string,
-  fields: Record<string, unknown> = {}
-): Span {
-  const currentSpan = new Span(baseMessage, fields);
-  currentSpan.start();
-  return currentSpan;
-}
+  /**
+   * runWithLogFields runs the given asynchronous block of code, and any log
+   * messages emitted in that block of code will have the given fields attached
+   * to them.
+   *
+   * @param fields - fields to attach, as key-value pairs (the values should be
+   * JSON-serializable).
+   */
+  async runWithLogFields<R>(
+    fields: Readonly<Record<string, unknown>>,
+    execute: () => Promise<R>
+  ): Promise<R> {
+    return FieldsStorage.run(fields, execute);
+  }
 
-/**
- * Runs an entire operation in a span
- * @param baseMessage - static message, used for grepping logs
- * @param fields - structured fields (should be string-serializable)
- * @param execute - async callback. Optional function `setCompletionFields`
- * passed in as parameter allows callback to set additional fields
- * for the span finish event.
- * @returns
- */
-export async function span<R>(
-  baseMessage: string,
-  fields: Record<string, unknown>,
-  execute: (
-    setCompletionFields: (additionalFields: Record<string, unknown>) => void
-  ) => Promise<R> | R
-): Promise<R> {
-  // Allow the callback to register additional fields upon completion
-  let completionFields: Record<string, unknown> = {};
-  const setCompletionFields = (additionalFields: Record<string, unknown>) => {
-    completionFields = { ...completionFields, ...additionalFields };
-  };
+  /**
+   * Emits a log message at an "info" level.
+   *
+   * Use this for general progress info or diagnostic information.
+   *
+   * @param message - base message, should be completely static (store any
+   * changing fields/state in the fields object). This makes it easy to find
+   * where, in code, a given log line was emitted just by searching for its
+   * message.
+   * @param fields - additional context to group with the log message, as
+   * key-value pairs (the values should be JSON-serializable).
+   */
+  static info(message: string, fields: Record<string, unknown> = {}) {
+    this.logBase("info", message, fields);
+  }
 
-  // Run the operation in a new span
-  const currentSpan = new Span(baseMessage, fields);
-  currentSpan.start();
-  try {
-    const resultOrPromise = execute(setCompletionFields);
-    let result: R;
-    if (resultOrPromise instanceof Promise) {
-      result = await resultOrPromise;
-    } else {
-      result = resultOrPromise;
+  /**
+   * Emits a log message at a "warn" level.
+   *
+   * Use this for unexpected situations where there is an issue that, while not
+   * critical to the functionality of the application, should likely still be
+   * investigated/fixed.
+   *
+   * @param message - base message, should be completely static (store any
+   * changing fields/state in the fields object). This makes it easy to find
+   * where, in code, a given log line was emitted just by searching for its
+   * message.
+   * @param fields - additional context to group with the log message, as
+   * key-value pairs (the values should be JSON-serializable).
+   */
+  static warn(message: string, fields: Record<string, unknown> = {}) {
+    this.logBase("warn", message, fields);
+  }
+
+  /**
+   * Emits a log message at an "error" level, optionally attaching a caught
+   * exception to the log message that will include its stack trace, if
+   * available.
+   *
+   * Use this for critical errors that significantly impact the functionality of
+   * the application.
+   *
+   * If the application has no realistic way forwards (or if doing so would
+   * corrupt data), then call {@link process.exit} immediately after the call to
+   * {@link Log.error}.
+   *
+   * @param message - base message, should be completely static (store any
+   * changing fields/state in the fields object). This makes it easy to find
+   * where, in code, a given log line was emitted just by searching for its
+   * message.
+   * @param errorObj - the error object to include information on. Ideally, this
+   * is a subclass of `Error`, but can be any JSON-serializable value. To emit
+   * attaching any extra error-related fields (and instead just emit a normal
+   * "error"-level message), pass in `null` for this parameter.
+   * @param fields - additional context to group with the log message, as
+   * key-value pairs (the values should be JSON-serializable).
+   */
+  static error(
+    message: string,
+    errorObj: unknown,
+    fields: Record<string, unknown> = {}
+  ) {
+    let errorFields = {};
+    if (errorObj !== null) {
+      errorFields = Log.makeErrorFields(errorObj);
     }
 
-    currentSpan.finish(completionFields);
-
-    return result;
-  } catch (err) {
-    currentSpan.error(err, completionFields);
-    throw err;
-  }
-}
-
-/**
- * Represents a span operation that includes timing information
- * and structured logging
- */
-export class Span {
-  baseMessage: string;
-
-  fields: Record<string, unknown>;
-
-  startTime: [number, number] | null;
-
-  /**
-   * Creates a new span without starting it
-   * @param baseMessage - static message, used for grepping logs
-   * @param fields - structured fields (should be string-serializable)
-   */
-  constructor(baseMessage: string, fields: Record<string, unknown> = {}) {
-    this.baseMessage = baseMessage;
-    this.fields = fields;
-    this.startTime = null;
-  }
-
-  /**
-   * Emits a span event as a log line
-   * @param event - the type of the span event
-   * @param additionalFields - additional structured fields
-   * (should be string-serializable)
-   */
-  spanEvent(
-    event: "start" | "finish" | "error",
-    additionalFields: Record<string, unknown> = {}
-  ): void {
-    if (logFormat === "json") {
-      log(this.baseMessage, {
-        spanEvent: event,
-        ...this.fields,
-        ...additionalFields,
-      });
-    } else {
-      const eventPrefix = `${event}ed`;
-      // 8 is the length of the longest possible event prefix, "finished"
-      log(`${eventPrefix.padStart(8)} ${this.baseMessage}`, {
-        ...this.fields,
-        ...additionalFields,
-      });
-    }
-  }
-
-  /**
-   * Starts a previously-constructed span, emitting a span start event
-   * and noting the start time in the `Span` object
-   */
-  start(): void {
-    this.spanEvent("start");
-    this.startTime = process.hrtime();
-  }
-
-  getElapsedMs(): number {
-    if (this.startTime === null) {
-      throw new Error(
-        `Span has not yet started: baseMessage="${this.baseMessage}"`
-      );
-    }
-
-    // Gives [seconds, nanoseconds]
-    const end = process.hrtime(this.startTime);
-    return end[0] * 1_000 + end[1] / 1_000_000;
-  }
-
-  /**
-   * Finishes a previously-started span, emitting a span finish event
-   * that includes the elapsed time since the call to `start`
-   * @param additionalFields - additional structured fields
-   * (should be string-serializable)
-   */
-  finish(additionalFields: Record<string, unknown> = {}): void {
-    this.spanEvent("finish", {
-      elapsedMs: this.getElapsedMs(),
-      ...additionalFields,
+    this.logBase("error", message, {
+      ...errorFields,
+      ...fields,
     });
   }
 
   /**
-   * Finishes a previously-started span, emitting a span error event
-   * that includes the elapsed time since the call to `start`
-   * @param additionalFields - additional structured fields
-   * (should be string-serializable)
+   * Starts a new profiler timer, to use for timing operations. Call
+   * `Profiler.done` on the returned value once the operation is done.
+   *
+   * This function is a thin wrapper around {@link winston.Logger.startTimer}.
    */
-  error(err: unknown, additionalFields: Record<string, unknown> = {}): void {
-    this.spanEvent("error", {
-      level: "error",
-      elapsedMs: this.getElapsedMs(),
-      ...errorFields(err, false),
-      ...additionalFields,
+  static startTimer(): Profiler {
+    return new ProfilerWrapper(this.logger.startTimer());
+  }
+
+  /**
+   * Configures the logger to use the provided options for any log messages
+   * emitted after this call.
+   */
+  static configure(logOptions: LogOptions) {
+    this.logger = this.makeLogger(logOptions);
+  }
+
+  /**
+   * Responsible for constructing the winston.Logger instance from the options
+   * struct. Add any customizations as needed here.
+   */
+  private static makeLogger(logOptions: LogOptions): winston.Logger {
+    return winston.createLogger({
+      transports: [new winston.transports.Console()],
+      format:
+        logOptions.format === "json"
+          ? winston.format.json()
+          : winston.format.cli(),
     });
   }
+
+  /**
+   * Handles attaching the current set of fields from the asynchronous context
+   * and forwards the log message to winston.
+   */
+  private static logBase(
+    logLevel: "info" | "warn" | "error",
+    message: string,
+    fields: Record<string, unknown>
+  ) {
+    this.logger.log({
+      ...FieldsStorage.get(),
+      ...fields,
+      level: logLevel,
+      message,
+    });
+  }
+
+  /**
+   * Performs a best-effort serialization of the error into structured fields
+   * @param err - the raw error object or unknown
+   * @returns a structured log fields record
+   */
+  private static makeErrorFields(
+    err: unknown
+  ): Readonly<Record<string, unknown>> {
+    const { message, stack } = err as {
+      message?: string;
+      stack?: string;
+    };
+
+    // Perform a best-effort serialization of the error
+    let errorAsString = String(err);
+    if (errorAsString === "[object Object]") {
+      errorAsString = safeStringify(err);
+    }
+
+    const fields: Record<string, unknown> = {
+      error: errorAsString,
+      // Don't use 'message', since that is the name of an existing field
+      errorMessage: message,
+      stack,
+    };
+
+    return fields;
+  }
 }
+
+/**
+ * FieldsStorage provides a thin wrapper around the {@link AsyncLocalStorage}
+ * API, to be used for storing contextual log fields that are shared across any
+ * log lines emitted within a single call to {@link Log.runWithLogFields} (using
+ * {@link FieldsStorage.run}).
+ */
+class FieldsStorage {
+  private static internal = new AsyncLocalStorage<
+    Readonly<Record<string, unknown>>
+  >();
+
+  static get(): Readonly<Record<string, unknown>> {
+    return this.internal.getStore() ?? {};
+  }
+
+  static async run<R>(
+    newFields: Readonly<Record<string, unknown>>,
+    execute: () => Promise<R>
+  ): Promise<R> {
+    const currentFields = this.get();
+    return this.internal.run({ ...currentFields, ...newFields }, execute);
+  }
+}
+
+/**
+ * ProfilerWrapper is a thin wrapper around {@link winston.Profiler} that
+ * automatically attaches the current set of fields from the asynchronous
+ * context, when the log message finally gets emitted (see
+ * {@link ProfilerWrapper.done}).
+ */
+class ProfilerWrapper {
+  private internal: winston.Profiler;
+
+  constructor(internal: winston.Profiler) {
+    this.internal = internal;
+  }
+
+  done(message: string, fields: Record<string, unknown> = {}) {
+    this.internal.done({ ...FieldsStorage.get(), ...fields, message });
+  }
+}
+
+// Export the type of ProfilerWrapper, but not the class itself
+export type Profiler = InstanceType<typeof ProfilerWrapper>;
