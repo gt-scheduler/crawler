@@ -2,12 +2,12 @@
 # coding: utf-8
 
 from tabula import *
-from tabulate import tabulate
 import re
 import numpy as np
 import pandas as pd
 from datetime import datetime
 import json
+from pathlib import Path
 from typing import *
 
 #reads table from pdf file
@@ -117,7 +117,7 @@ class Parser:
 
     def parseFile(self, file="202209") -> pd.DataFrame:
         print(f"Parsing file: {file}")
-        with open("./matrix.json") as f:
+        with open(Path("./src/matrix.json").resolve().absolute()) as f:
             locations = json.load(f)
         if file in locations:
             file = locations[file]
@@ -143,7 +143,7 @@ class Parser:
                     print("Parsing: {}".format(df.columns[1]))
                     block = df.drop(index=0).iloc[:, :2].copy()
                     block.columns = block.iloc[0]
-                    schedule = schedule.append(self.parseBlock(block))
+                    schedule = pd.concat([schedule, self.parseBlock(block)], axis=0, join="outer")
 
         # schedule['finalTime'] = schedule['finalTime'].str.replace("‐", "-")
         # schedule['Time'] = schedule['Time'].str.replace("‐", "-")
@@ -168,7 +168,4 @@ class Parser:
 # parser.parseCommon()
 # schedule = parser.schedule
 # common = parser.common
-
-
-
 

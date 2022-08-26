@@ -24,6 +24,15 @@ jobs:
 
       - name: Install
         run: yarn install --frozen-lockfile
+        
+      - name: Pip
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+          cache: 'pip' # caching pip dependencies
+
+      - name: Pip Install
+        run: pip install -r requirements.txt
 
       - name: Crawling
         run: yarn start
@@ -32,6 +41,9 @@ jobs:
           NUM_TERMS: 2
           DETAILS_CONCURRENCY: 256
           DATA_FOLDER: ./data
+          
+      - name: Revision
+        run: python ./src/Revise.py
 
       - name: Upload
         uses: JamesIves/github-pages-deploy-action@releases/v4

@@ -35,7 +35,7 @@ class Revise:
 
     def iterFiles(self):
         parser = Parser()
-        for file in Path("../data/").iterdir():
+        for file in Path("./data/").resolve().absolute().iterdir():
             if not re.match(r"\d+\.json", file.name): continue
             self.file = file
             parser.parseFile(file.stem)
@@ -47,8 +47,8 @@ class Revise:
     def process(self):
         with open(self.file) as f:
             data = json.load(f)
-        dates = np.concatenate([self.schedule['finalDate'].unique(), self.common['Date'].unique()]) if not self.schedule.empty else np.array([])
-        times = np.concatenate([self.schedule['finalTime'].unique(), self.common['Time'].unique()]) if not self.schedule.empty else np.array([])
+        dates = np.sort(np.unique(np.concatenate([self.schedule['finalDate'].unique(), self.common['Date'].unique()]) if not self.schedule.empty else np.array([])))
+        times =         np.unique(np.concatenate([self.schedule['finalTime'].unique(), self.common['Time'].unique()]) if not self.schedule.empty else np.array([]))
         data['caches']['finalTimes'] = times.tolist()
         data['caches']['finalDates'] = dates.tolist()
 
@@ -84,8 +84,8 @@ class Revise:
                 section.add(-1)
                 section.add(-1)
 
-        with open(self.file.with_name("asdf.json"), "w") as f:
-            json.dump(data, f, indent=4)
+        with open(self.file, "w") as f:
+            json.dump(data, f)
 
 
 Revise()
