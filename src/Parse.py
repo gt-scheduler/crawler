@@ -86,12 +86,13 @@ class Parser:
 
         df=None
         for chunk in self.read:
-            if "Common Exams" in chunk.columns: df=chunk
+            if "Common Exams" in chunk.columns: df=chunk.copy()
         if df is None: return None
         # Cut to size
         df.columns=df.iloc[0, :]
         df.drop(inplace=True, index=0)
         df = df[['Course', 'Date', 'Time']]
+        df['Time'] = df['Time'].str.lower()
         df = df.loc[df['Course'] != "None"]
 
         # Change date format
@@ -145,9 +146,6 @@ class Parser:
                     block.columns = block.iloc[0]
                     schedule = pd.concat([schedule, self.parseBlock(block)], axis=0, join="outer")
 
-        # schedule['finalTime'] = schedule['finalTime'].str.replace("‐", "-")
-        # schedule['Time'] = schedule['Time'].str.replace("‐", "-")
-
         schedule = schedule.apply(lambda x: x.str.strip()).apply(lambda x: x.str.replace("‐", "-"))
         # schedule.reset_index(inplace=True, drop=True)
         schedule.set_index(['Days', 'Time'], inplace=True)
@@ -161,11 +159,4 @@ class Parser:
 
     def getData(self) -> pd.DataFrame:
         return self.schedule
-
-
-# parser = Parser()
-# parser.parseFile("202208")
-# parser.parseCommon()
-# schedule = parser.schedule
-# common = parser.common
 
