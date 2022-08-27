@@ -27,7 +27,6 @@ class Section:
         self.obj[1][0].append(val)
 
 
-
 class Revise:
 
     def __init__(self):
@@ -57,9 +56,15 @@ class Revise:
             row=self.schedule.loc[days, period]
             return row
 
+        lab = re.compile(r"\d")
         Section.cache = data['caches']
         for course, courseData in data['courses'].items():
             for sectionTitle, sectionData in courseData[1].items():
+                # Skip lab sections
+                if lab.search(sectionTitle):
+                    section.add(-1)
+                    section.add(-1)
+                    continue
                 try:
                     section = Section(sectionData)
                 except:
