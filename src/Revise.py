@@ -39,6 +39,7 @@ class Revise:
             self.file = file
             parser.parseFile(file.stem)
             parser.parseCommon()
+            parser.export("{}_Finals".format(file.stem))
             self.schedule = parser.schedule
             self.common = parser.common
             self.process()

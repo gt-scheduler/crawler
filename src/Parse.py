@@ -10,16 +10,11 @@ import json
 from pathlib import Path
 from typing import *
 
-#reads table from pdf file
-year=2022
-month="05"
-
 
 class Parser:
 # TODO fix uneven boxes case. don't just ignore repeats, use the longer one. probably just better to use multi index
-    def __init__(self, year=2022):
+    def __init__(self):
         self.dateFormat = "%b %d, %Y"
-        self.year = year
         self.schedule = pd.DataFrame()
         self.read = None
         self.common = pd.DataFrame()
@@ -37,7 +32,11 @@ class Parser:
         hyphen = re.compile(r"(?<=[ap]m)\s(?=\d)")
         def date (n: re.Match):
             nonlocal sectionDate
-            date = datetime.strptime(n.group(), "%A, %b %d")
+            try:
+                date = datetime.strptime(n.group(), "%A, %b %d")
+            except ValueError:
+                # Full month name was used
+                date = datetime.strptime(n.group(), "%A, %B %d")
             date = date.replace(year=self.year)
             sectionDate = date.strftime(self.dateFormat)
             return ""
@@ -99,7 +98,12 @@ class Parser:
         day = re.compile(r"\w+(?=,)")
         def convert(val, day):
             string = day.sub(lambda match: match.group()[:3],val)
-            return datetime.strptime(string, "%a, %b %d").replace(year=year).strftime("%b %d, %Y")
+            try:
+                date = datetime.strptime(string, "%a, %b %d").replace(year=self.year).strftime("%b %d, %Y")
+            except ValueError:
+                # Full month name was used (e.x. July instead of Jul)
+                date = datetime.strptime(string, "%a, %B %d").replace(year=self.year).strftime("%b %d, %Y")
+            return date
         df['Date'] = df['Date'].apply(lambda val: convert(val, day))
 
         # Explode comma separated courses
@@ -117,6 +121,7 @@ class Parser:
         self.common = df
 
     def parseFile(self, file="202209") -> pd.DataFrame:
+        self.year = int(file[0:4])
         print(f"Parsing file: {file}")
         with open(Path("./src/matrix.json").resolve().absolute()) as f:
             locations = json.load(f)
@@ -126,7 +131,7 @@ class Parser:
             print("File was not found")
             return None
 
-        self.read = read_pdf(file) #address of pdf file
+        self.read = read_pdf(file, pages=1) #address of pdf file
         schedule = pd.DataFrame()
         sections = set()
         for chunk in self.read:
@@ -153,7 +158,7 @@ class Parser:
 
     def export(self, title="Finals Schedule"):
         if self.schedule is not None:
-            self.schedule.to_csv("{}.csv".format(title))
+            self.schedule.to_csv("./data/{}.csv".format(title))
         else:
             print("Schedule has not been parsed")
 
