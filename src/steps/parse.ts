@@ -64,6 +64,8 @@ export function parse(html: string, version: number): TermData {
     attributes: [],
     gradeBases: [],
     locations: [],
+    finalDates: [],
+    finalTimes: [],
   };
   const updatedAt = new Date();
 
@@ -147,6 +149,10 @@ export function parse(html: string, version: number): TermData {
       const dateRangeIndex = cache(caches.dateRanges, dateRange);
       const locationIndex = cache(caches.locations, location || null);
 
+      // Set to -1 here and to be updated by Revise.py later
+      const finalDateIndex = -1;
+      const finalTimeIndex = -1;
+
       return [
         periodIndex,
         days,
@@ -154,6 +160,8 @@ export function parse(html: string, version: number): TermData {
         locationIndex,
         instructors,
         dateRangeIndex,
+        finalDateIndex,
+        finalTimeIndex,
       ];
     });
 

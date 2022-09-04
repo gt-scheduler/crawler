@@ -24,7 +24,7 @@ import {
 import { getIntConfig } from "./utils";
 
 // Current scraped JSON version
-const CURRENT_VERSION = 2;
+const CURRENT_VERSION = 3;
 
 // Number of terms to scrape (scrapes most recent `NUM_TERMS`)
 const NUM_TERMS = getIntConfig("NUM_TERMS") ?? 2;

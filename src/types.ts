@@ -62,6 +62,14 @@ export interface Caches {
    * List of the different building locations a class can be at
    */
   locations: Location[];
+  /**
+   * List of the all the dates on which finals are happening
+   */
+  finalDates: Date[];
+  /**
+   * List of the time blocks for finals
+   */
+  finalTimes: string[];
 }
 
 /**
@@ -176,7 +184,19 @@ export type Meeting = [
    * an integer index into `caches.dateRanges`,
    * specifying the start/end date of the class this semester
    */
-  dateRangeIndex: number
+  dateRangeIndex: number,
+  /**
+   * integer index into caches.finalDates,
+   * specifying the date at which the final is
+   * -1 when no match could be found
+   */
+  finalDateIndex: number,
+  /**
+   * integer index into caches.finalTimes,
+   * specifying the time at which the final is
+   * -1 when no match could be found
+   */
+  finalTimeIdx: number
 ];
 
 export type MinimumGrade = "A" | "B" | "C" | "D" | "T";

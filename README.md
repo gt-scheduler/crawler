@@ -69,6 +69,39 @@ cat $(find . -type f -name "*.log" | sort -n | tail -1) | jq -cs '.'
 
 For some useful queries on the log data, see [📚 Useful queries on crawler logs](https://github.com/gt-scheduler/crawler/wiki/%F0%9F%93%9A-Useful-queries-on-crawler-logs).
 
+### Using the Python Finals Data Scraper
+
+Install the necessary Python modules with the included `requirements.txt` file
+
+```
+pip install -r requirements.txt
+```
+
+Run the reviser to augment the data previously scraped with the new finals data
+
+```
+python ./src/Revise.py
+```
+
+The JSON files in the `data` folder will now contain updated information regarding the finals date and time.
+
+More information can be found [here](https://github.com/gt-scheduler/crawler/wiki/Finals-Scraping#process)
+
+**Updating the list of finals PDFs**
+
+The Registrar publishes a PDF with the Finals schedule at the start of each semester.
+The page with the PDF for the Fall 2022 semester can be found [here](https://registrar.gatech.edu/info/final-exam-matrix-fall-2022)
+
+The `matrix.json` file contains a mapping from term to the pdf file.
+<br>The key is one of the terms identified by the scraper [here](https://gt-scheduler.github.io/crawler/202008.json).
+<br>The value is the direct address for the PDF file such as [this](https://registrar.gatech.edu/files/202208%20Final%20Exam%20Matrix.pdf)
+
+This mapping needs to be updated each semester when a new schedule is posted
+
+# TODO:
+
+More information can be found on the [wiki](link)
+
 ### Linting
 
 The project uses pre-commit hooks using [Husky](https://typicode.github.io/husky/#/) and [`lint-staged`](https://www.npmjs.com/package/lint-staged) to run linting (via [ESLint](https://eslint.org/)) and formatting (via [Prettier](https://prettier.io/)). These can be run manually from the command line to format/lint the code on-demand, using the following commands:
