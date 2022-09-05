@@ -188,13 +188,15 @@ export type Meeting = [
   /**
    * integer index into caches.finalDates,
    * specifying the date at which the final is
-   * -1 when no match could be found
+   * -1 when no match could be found and
+   * as a default value
    */
   finalDateIndex: number,
   /**
    * integer index into caches.finalTimes,
    * specifying the time at which the final is
    * -1 when no match could be found
+   * and as a default value
    */
   finalTimeIdx: number
 ];
