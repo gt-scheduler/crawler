@@ -87,7 +87,7 @@ The JSON files in the `data` folder will now contain updated information regardi
 
 More information can be found [here](https://github.com/gt-scheduler/crawler/wiki/Finals-Scraping#process)
 
-**Updating the list of finals PDFs**
+#### Updating the list of finals PDFs
 
 The Registrar publishes a PDF with the Finals schedule at the start of each semester.
 The page with the PDF for the Fall 2022 semester can be found [here](https://registrar.gatech.edu/info/final-exam-matrix-fall-2022)
