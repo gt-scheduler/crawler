@@ -64,10 +64,12 @@ export interface Caches {
   locations: Location[];
   /**
    * List of the all the dates on which finals are happening
+   * Example date: Aug 02, 2022
    */
   finalDates: Date[];
   /**
    * List of the time blocks for finals
+   * Example time: 11:20 am - 2:10 pm
    */
   finalTimes: string[];
 }
