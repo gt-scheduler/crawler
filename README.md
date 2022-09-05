@@ -71,7 +71,7 @@ For some useful queries on the log data, see [📚 Useful queries on crawler log
 
 ### Using the Python Finals Data Scraper
 
-Install the necessary Python modules with the included `requirements.txt` file
+First, ensure [Python 3.9 or newer](https://www.python.org/downloads/) is installed. Then, install the necessary Python modules with the included `requirements.txt` file:
 
 ```
 pip install -r requirements.txt
