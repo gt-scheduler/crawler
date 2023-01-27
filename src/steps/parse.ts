@@ -2,8 +2,12 @@ import { TermData, Course, Caches, Meeting, Section, Location } from "../types";
 import { cache, extract, match, regexExec } from "../utils";
 import { warn } from "../log";
 
-/*
+/**
  * A map consisting of course locations and corresponding coordinates
+ *
+ * When changing these, make sure to also add an abbreviation to the frontend
+ * in https://github.com/gt-scheduler/website/blob/main/src/utils/misc.tsx
+ * (search for `LOCATION_ABBREVIATIONS`).
  */
 const courseLocations = new Map([
   ["Skiles", new Location(33.773568, -84.395957)],
@@ -25,6 +29,7 @@ const courseLocations = new Map([
   ["Engineering Sci and Mechanics", new Location(33.772114, -84.395289)],
   ["Mason", new Location(33.776764, -84.39844)],
   ["Love (MRDC II)", new Location(33.77672, -84.401764)],
+  ["J. Erskine Love Manufacturing", new Location(33.77672, -84.401764)],
   ["MRDC", new Location(33.777187, -84.400484)],
   ["Manufacture Rel Discip Complex", new Location(33.777187, -84.400484)],
   ["Sustainable Education", new Location(33.77622, -84.397959)],
@@ -47,6 +52,7 @@ const courseLocations = new Map([
   ["Molecular Sciences & Engr", new Location(33.779836, -84.396666)],
   ["Molecular Sciences and Engr", new Location(33.779836, -84.396666)],
   ["760 Spring Street", new Location(33.77561, -84.38906)],
+  ["760 Spring St NW", new Location(33.77561, -84.38906)],
   ["Paper Tricentennial", new Location(33.780983, -84.404516)],
   ["Daniel Lab", new Location(33.773714, -84.394047)],
   ["Pettit MiRC", new Location(33.776532, -84.397307)],
@@ -64,7 +70,26 @@ const courseLocations = new Map([
   ["Habersham", new Location(33.773978, -84.404311)],
   ["Savant", new Location(33.772075, -84.395277)],
   ["ISyE Main", new Location(33.775178, -84.401879)],
+  ["Fourth Street Houses", new Location(33.775381, -84.391451)],
 ]);
+
+const ignoredLocations = [
+  "TBA",
+  // The crawler doesn't attempt to resolve locations to their coordinates
+  // for any locations outside of the main Atlanta campus (including study
+  // abroad):
+  "Budapest Study Abroad",
+  "China, Shanghai",
+  "Foreign Studies Prog (FORSPRO)",
+  "GT Shenzhen",
+  "Georgia Tech Lorraine",
+  "Ritsumeikan U, Oita Japan",
+  "Lisbon, Portugal",
+  "New Zealand",
+  "Oxford",
+  "South Korea",
+  "Toulouse, France",
+];
 
 export function parse(html: string, version: number): TermData {
   const courses: Record<string, Course> = {};
@@ -153,7 +178,11 @@ export function parse(html: string, version: number): TermData {
       if (locationName) {
         location = courseLocations.get(locationName);
       } else {
-        missingLocations.add(where);
+        const shouldIgnore =
+          ignoredLocations.find((locName) => where.includes(locName)) != null;
+        if (!shouldIgnore) {
+          missingLocations.add(where);
+        }
       }
 
       const instructors = instructorsString.replace(/ +/g, " ").split(", ");
