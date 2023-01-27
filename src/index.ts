@@ -29,6 +29,11 @@ const CURRENT_VERSION = 3;
 // Number of terms to scrape (scrapes most recent `NUM_TERMS`)
 const NUM_TERMS = getIntConfig("NUM_TERMS") ?? 2;
 
+// Whether to always scrape the current term, even if it's not in the
+// most recent `NUM_TERMS` terms.
+const ALWAYS_SCRAPE_CURRENT_TERM: boolean =
+  getIntConfig("ALWAYS_SCRAPE_CURRENT_TERM") === 1;
+
 // IO Concurrency to download files using.
 // This is a completely arbitrary number.
 const DETAILS_CONCURRENCY = getIntConfig("DETAILS_CONCURRENCY") ?? 128;
@@ -72,8 +77,89 @@ async function crawl(): Promise<void> {
     async (setFinishFields) => {
       const terms = await list();
       const recentTerms = terms.slice(0, NUM_TERMS);
-      setFinishFields({ terms, recentTerms, desiredNumTerms: NUM_TERMS });
-      return recentTerms;
+      let toScrape = recentTerms;
+
+      if (ALWAYS_SCRAPE_CURRENT_TERM) {
+        // Make sure that, in addition to the most-recent terms,
+        // the 'current' term is also scraped. This is done by
+        // computing a rough estimate of the current term based on
+        // the current date.
+        //
+        // Motivation: at the beginning of 2023, Oscar had all 3 terms for the
+        // year (Spring, Summer, Fall) listed (but no courses were in Summer/
+        // Fall). In the past (to my knowledge), this wasn't the case; terms
+        // would only appear once the course schedule was released (in the
+        // middle of the prior semester). The crawler is configured to scrape
+        // the most recent 2 terms, so to make sure it continues to scrape the
+        // Spring schedule during the Spring semester, this was added as a
+        // workaround.
+
+        type TermLabel = "spring" | "summer" | "fall";
+        const getTermEstimate = (date: Date): TermLabel => {
+          const month = date.getMonth();
+          if (month <= 3 /* Until end of April */) {
+            return "spring";
+          }
+          if (month <= 6 /* Until end of July */) {
+            return "summer";
+          }
+          return "fall";
+        };
+
+        /**
+         * Reverse of getSemesterName from https://github.com/gt-scheduler/website/blob/main/src/utils/semesters.ts:
+         */
+        const termLabelToPossibleTermCodes = (
+          termString: TermLabel,
+          year: number
+        ): string[] => {
+          switch (termString) {
+            case "spring":
+              return [`${year}02`, `${year}03`];
+            case "summer":
+              return [`${year}05`, `${year}06`];
+            case "fall":
+              return [`${year}08`, `${year}09`];
+            default:
+              throw new Error(`invalid term string: ${termString}`);
+          }
+        };
+
+        const now = new Date();
+        const currentTermEstimate = getTermEstimate(now);
+        const possibleTermCodes = termLabelToPossibleTermCodes(
+          currentTermEstimate,
+          now.getFullYear()
+        );
+        const matchingTerms = terms.filter((term) =>
+          possibleTermCodes.includes(term)
+        );
+        if (matchingTerms.length === 0) {
+          warn(`no terms match the current term estimate`, {
+            currentTermEstimate,
+            possibleTermCodesFromEstimate: possibleTermCodes,
+            actualTermCodes: terms,
+          });
+        } else {
+          const [matchingTerm] = matchingTerms;
+          const alreadyInRecentTerms = recentTerms.includes(matchingTerm);
+          if (!alreadyInRecentTerms) {
+            toScrape = [matchingTerm, ...recentTerms];
+          }
+          setFinishFields({
+            addedCurrentTerm: !alreadyInRecentTerms,
+            currentTerm: matchingTerm,
+          });
+        }
+      }
+
+      setFinishFields({
+        terms,
+        termsToScrape: toScrape,
+        recentTerms,
+        desiredNumTerms: NUM_TERMS,
+      });
+      return toScrape;
     }
   );
 
