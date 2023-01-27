@@ -39,6 +39,7 @@ jobs:
         env:
           LOG_FORMAT: json
           NUM_TERMS: 2
+          ALWAYS_SCRAPE_CURRENT_TERM: 1
           DETAILS_CONCURRENCY: 256
           DATA_FOLDER: ./data
           
