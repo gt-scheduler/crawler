@@ -165,7 +165,7 @@ async function crawl(): Promise<void> {
     }
   );
 
-  termsToScrape = ["202108", "202105"];
+  termsToScrape = ["202102", "202008"];
 
   // Scrape each term in parallel
   await Promise.all(
