@@ -244,3 +244,107 @@ export class Location {
  * ```
  */
 export type Prerequisites = PrerequisiteSet | [];
+
+export type BannerResponse = {
+  success: boolean;
+  totalCount: number;
+  data: SectionResponse[] | null;
+  pageOffset: number;
+  pageMaxSize: number;
+  sectionsFetchedCount: 0;
+  pathMode: string | null;
+  searchResultsConfigs: SearchResultsConfigResponse[] | null;
+  ztcEncodedImage: string | null;
+};
+
+export type SearchResultsConfigResponse = {
+  config: string;
+  display: string;
+  title: string;
+  required: boolean;
+  width: string;
+};
+
+export type SectionResponse = {
+  id: number;
+  term: string;
+  termDesc: string;
+  courseReferenceNumber: string;
+  partOfTerm: string;
+  subject: string;
+  subjectDescription: string;
+  sequenceNumber: string;
+  campusDescription: string;
+  scheduleTypeDescription: string;
+  courseTitle: string;
+  creditHours: number;
+  maximumEnrollment: number;
+  enrollment: number;
+  seatsAvailable: number;
+  waitCapacity: number;
+  waitCount: number;
+  crossList: unknown;
+  crossListCapacity: unknown;
+  crossListCount: unknown;
+  crossListAvailable: unknown;
+  creditHourHigh: number;
+  creditHourLow: number;
+  creditHourIndicator: unknown;
+  openSection: boolean;
+  linkIdentifier: unknown;
+  isSectionLinked: boolean;
+  subjectCourse: string;
+  faculty: FacultyResponse[];
+  reservedSeatSummary: unknown;
+  sectionAttributes: unknown;
+  instructionalMethod: unknown;
+  instructionalMethodDescription: unknown;
+};
+
+export interface FacultyResponse {
+  bannerId: string;
+  category: unknown;
+  class: string;
+  courseReferenceNumber: string;
+  displayName: string;
+  emailAddress: string;
+  primaryIndiciator: boolean;
+  term: string;
+}
+
+export interface MeetingsFacultyResponse {
+  category: string;
+  class: string;
+  courseReferenceNumber: string;
+  faculty: FacultyResponse[];
+  meetingTime: MeetingsResponse;
+  term: string;
+}
+
+export interface MeetingsResponse {
+  beginTime: string;
+  building: string;
+  buildingDescription: string;
+  campus: string;
+  campusDescription: string;
+  category: string;
+  class: string;
+  courseReferenceNumber: string;
+  creditHourSession: number;
+  endDate: string;
+  endTime: string;
+  friday: boolean;
+  hoursWeek: number;
+  meetingScheduleType: string;
+  meetingType: string;
+  meetingTypeDescription: string;
+  monday: boolean;
+  room: string;
+  saturday: boolean;
+  startDate: string;
+  sunday: boolean;
+  term: string;
+  thursday: boolean;
+  tuesday: boolean;
+  wednesday: boolean;
+}

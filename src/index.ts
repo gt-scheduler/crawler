@@ -189,11 +189,13 @@ async function crawlTerm(
   // Alias the parameter so we can modify it
   let spanFields = baseSpanFields;
 
-  // Download the term HTML page containing every course.
-  const html = await span(`downloading term`, spanFields, () => download(term));
+  // Download the term JSON containing every course.
+  const sections = await span(`downloading term`, spanFields, () =>
+    download(term, DETAILS_CONCURRENCY)
+  );
 
   const termData = await span(`parsing term data to JSON`, spanFields, () =>
-    parse(html, CURRENT_VERSION)
+    parse(sections, CURRENT_VERSION)
   );
 
   const allCourseIds = Object.keys(termData.courses);
