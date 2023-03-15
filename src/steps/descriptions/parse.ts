@@ -1,7 +1,7 @@
 import { warn } from "../../log";
 import { regexExec } from "../../utils";
 
-const descriptionRegex = /<TD CLASS="ntdefault">([\s\S]*?)<br \/>/;
+const descriptionRegex = /<section.*>([\s\S]*?)<\/section>/;
 
 /**
  * Parses the HTML for a single course to get its description, if it has one

@@ -8,6 +8,8 @@ import {
 } from "antlr4ts";
 import { AbstractParseTreeVisitor } from "antlr4ts/tree/AbstractParseTreeVisitor";
 import { ATNSimulator } from "antlr4ts/atn/ATNSimulator";
+import { load } from "cheerio";
+
 import { PrerequisitesLexer } from "./grammar/PrerequisitesLexer";
 import {
   AtomContext,
@@ -17,7 +19,7 @@ import {
   TermContext,
 } from "./grammar/PrerequisitesParser";
 import { PrerequisitesVisitor } from "./grammar/PrerequisitesVisitor";
-import { error } from "../../log";
+import { error, warn } from "../../log";
 import {
   MinimumGrade,
   PrerequisiteClause,
@@ -26,43 +28,228 @@ import {
   Prerequisites,
   PrerequisiteSet,
 } from "../../types";
-import { regexExec } from "../../utils";
-
-const prereqSectionStart = `<SPAN class="fieldlabeltext">Prerequisites: </SPAN>`;
-const prereqSectionRegex = /<br \/>\s*(.*)\s*<br \/>/;
 
 /**
- * Parses the HTML for a single course to get its prerequisites
- * @param html - Source HTML from the course details page
+ * A map consisting of full course names and their corresponding abbreviations
+ * from 1996-2023.
+ */
+const fullCourseNames = {
+  "Vertically Integrated Project": "VIP",
+  Wolof: "WOLO",
+  "Electrical & Computer Engr": "ECE",
+  "Computer Science": "CS",
+  "Cooperative Work Assignment": "COOP",
+  "Cross Enrollment": "UCGA",
+  "Earth and Atmospheric Sciences": "EAS",
+  English: "ENGL",
+  "Foreign Studies": "FS",
+  French: "FREN",
+  "Georgia Tech": "GT",
+  "Civil and Environmental Engr": "CEE",
+  "College of Architecture": "COA",
+  "College of Engineering": "COE",
+  "Computational Mod, Sim, & Data": "CX",
+  "Computational Science & Engr": "CSE",
+  "Biological Sciences": "BIOS",
+  Biology: "BIOL",
+  "Biomed Engr/Joint Emory PKU": "BMEJ",
+  "Biomedical Engineering": "BMED",
+  "Industrial Design": "ID",
+  "International Affairs": "INTA",
+  "International Logistics": "IL",
+  Internship: "INTN",
+  "Intl Executive MBA": "IMBA",
+  Japanese: "JAPN",
+  Korean: "KOR",
+  "Learning Support": "LS",
+  Linguistics: "LING",
+  "Literature, Media & Comm": "LMC",
+  Management: "MGT",
+  "Management of Technology": "MOT",
+  "Manufacturing Leadership": "MLDR",
+  "Materials Science & Engr": "MSE",
+  Accounting: "ACCT",
+  "Aerospace Engineering": "AE",
+  "Air Force Aerospace Studies": "AS",
+  "Applied Physiology": "APPH",
+  "Mechanical Engineering": "ME",
+  "Medical Physics": "MP",
+  "Military Science & Leadership": "MSL",
+  "Modern Languages": "ML",
+  Music: "MUSI",
+  "Naval Science": "NS",
+  Neuroscience: "NEUR",
+  Chemistry: "CHEM",
+  Chinese: "CHIN",
+  "City Planning": "CP",
+  Economics: "ECON",
+  "Elect & Comp Engr-Professional": "ECEP",
+  Physics: "PHYS",
+  "Political Science": "POL",
+  "Polymer, Textile and Fiber Eng": "PTFE",
+  Psychology: "PSYC",
+  "Public Policy": "PUBP",
+  "Public Policy/Joint GSU PhD": "PUBJ",
+  Russian: "RUSS",
+  Sociology: "SOC",
+  Spanish: "SPAN",
+  Mathematics: "MATH",
+  "Center Enhancement-Teach/Learn": "CETL",
+  "Chemical & Biomolecular Engr": "CHBE",
+  "Biomedical Engr/Joint Emory": "BMEM",
+  "Bldg Construction-Professional": "BCP",
+  "Building Construction": "BC",
+  Swahili: "SWAH",
+  "Georgia Tech Lorraine": "GTL",
+  German: "GRMN",
+  "Global Media and Cultures": "GMC",
+  "Health Systems": "HS",
+  History: "HIST",
+  "History, Technology & Society": "HTS",
+  "Industrial & Systems Engr": "ISYE",
+  "Nuclear & Radiological Engr": "NRE",
+  Philosophy: "PHIL",
+  "Applied Systems Engineering": "ASE",
+  Arabic: "ARBC",
+  Architecture: "ARCH",
+  "Office of International Educ": "OIE",
+  "College of Sciences": "COS",
+  "Ivan Allen College": "IAC",
+  "Serve, Learn, Sustain": "SLS",
+  Persian: "PERS",
+  Hebrew: "HEBW",
+  Hindi: "HIN",
+  "Int'l Plan Co-op Abroad": "IPCO",
+  "Int'l Plan Intern Abroad": "IPIN",
+  "Int'l Plan-Exchange Program": "IPFS",
+  "Int'l Plan-Study Abroad": "IPSA",
+  Portuguese: "PORT",
+  "Professional Practice": "DOPP",
+  "Lit, Communication & Culture": "LCC",
+  "Health Performance Science": "HPS",
+  "Philosophy of Science/Tech": "PST",
+  "Health Physics": "HP",
+  "Regents' Reading Skills": "RGTR",
+  "Regents' Writing Skills": "RGTE",
+  "Chemical Engineering": "CHE",
+  "Textile & Fiber Engineering": "TFE",
+  "Textile Engineering": "TEX",
+  "Management Science": "MSCI",
+  "Materials Engineering": "MATE",
+  "Civil Engineering": "CE",
+  "Electrical Engineering": "EE",
+  "Computer Engineering": "CMPE",
+  "Military Science": "MS",
+  "Nuclear Engineering": "NE",
+  "Physical Education": "PE",
+  "Engineering Graphics": "EGR",
+  "Engr Science and Mechanics": "ESM",
+  "Technology & Science Policy": "TASP",
+  "Foreign Language": "FL",
+  "Studies Abroad": "SA",
+};
+const courseMap = new Map(Object.entries(fullCourseNames));
+
+// Header's indices in prereq HTML table
+const Headers = {
+  Operator: 0,
+  OParen: 1,
+  Test: 2,
+  Score: 3,
+  Subject: 4,
+  CourseNumber: 5,
+  Level: 6,
+  Grade: 7,
+  CParen: 8,
+};
+
+/**
+ * Converts prerequisites in HTML table format to Banner 8's string format
+ * but without semester level.
+ * @param html - Source HTML for the page
+ * @returns prereq string (e.g., "MATH 8305 Minimum Grade of D")
+ *
+ * NOTE: When a course name is missing from fullCourseNames map above,
+ * the course is removed from the prerequisite list and a warning is logged.
+ */
+function prereqHTMLToString(html: string, courseId: string) {
+  const $ = load(html);
+  const prereqTable = $(".basePreqTable").find("tr");
+  const prereqs = Array<string>();
+
+  prereqTable.each((rowIndex, element) => {
+    if (rowIndex === 0) return;
+
+    const prereqRow = $(element).children();
+    let prereq = "";
+
+    let subjectCode: string | undefined;
+
+    prereqRow.each((colIndex: number): void => {
+      if (colIndex === Headers.Level) return;
+      let value = prereqRow.eq(colIndex).text();
+
+      if (value.length === 0) return;
+      if (colIndex === Headers.Operator) value = value.toLowerCase();
+      if (colIndex === Headers.Subject) {
+        subjectCode = courseMap.get(value);
+        if (!subjectCode) {
+          warn(
+            `Course has a prereq for ${value} whose abbreviation does not exist. Prereq skipped.`,
+            {
+              courseId,
+              subject: value,
+            }
+          );
+          return;
+        }
+        value = subjectCode;
+      }
+
+      // ignore course if course abbreviation not found
+      if (
+        (colIndex === Headers.CourseNumber || colIndex === Headers.Grade) &&
+        !subjectCode
+      )
+        return;
+
+      if (colIndex === Headers.Grade) value = `Minimum Grade of ${value}`;
+
+      prereq += value;
+
+      if (colIndex !== Headers.OParen && colIndex !== Headers.CParen)
+        prereq += " ";
+    });
+
+    prereqs.push(prereq);
+  });
+
+  // Concatenate all prereqs and remove empty parantheses
+  return prereqs.join("").trim();
+}
+
+/**
+ * Parses the HTML of a single course to get its prerequisites
+ * @param html - Source HTML for the page
+ * @param courseId - The joined course id (SUBJECT NUMBER); i.e. `"CS 2340"`
  */
 export function parseCoursePrereqs(
   html: string,
   courseId: string
 ): Prerequisites {
-  const prereqFieldHeaderIndex = html.indexOf(prereqSectionStart);
-  if (prereqFieldHeaderIndex === -1) {
-    return [];
-  }
-
-  // The prerequisites section does exist; find the inner contents:
-  const [, contents] = regexExec(
-    prereqSectionRegex,
-    html.substring(prereqFieldHeaderIndex)
-  );
-
-  // Clean up the contents to remove the links and get plaintext
-  const cleaned = cleanContents(contents);
+  // Converts prereqs in HTML table form to Banner 8 (old Oscar system that crawler-v1 uses)'s string format
+  const prereqString = prereqHTMLToString(html, courseId);
 
   // Create the lexer and parser using the ANTLR 4 grammar defined in ./grammar
   // (using antlr4ts: https://github.com/tunnelvisionlabs/antlr4ts)
-  const charStream = CharStreams.fromString(cleaned, courseId);
+  const charStream = CharStreams.fromString(prereqString, courseId);
   const lexer = new PrerequisitesLexer(charStream);
   lexer.removeErrorListeners();
-  lexer.addErrorListener(new ErrorListener(courseId, cleaned));
+  lexer.addErrorListener(new ErrorListener(courseId, prereqString));
   const tokenStream = new CommonTokenStream(lexer);
   const parser = new PrerequisitesParser(tokenStream);
   parser.removeErrorListeners();
-  parser.addErrorListener(new ErrorListener(courseId, cleaned));
+  parser.addErrorListener(new ErrorListener(courseId, prereqString));
 
   // Get the top-level "parse" rule's tree
   // and pass it into our visitor to transform the parse tree
@@ -84,21 +271,8 @@ export function parseCoursePrereqs(
   // Finally, flatten the tree so that consecutive operands
   // for the same operator in a series of nested PrerequisiteSets
   // are put into a single PrerequisiteSet
-  return flatten(prerequisiteClause);
-}
-
-/**
- * Cleans the contents from the HTML into something that can be recognized
- * by the ANTLR-generated parser according to the grammar in `./grammar`
- * @param contents - Original HTML contents from the downloaded details page
- */
-function cleanContents(contents: string): string {
-  // Replace all occurrences of HTML elements
-  // https://stackoverflow.com/a/15180206
-  const replaced = contents.replace(/<[^>]*>/g, "");
-
-  // Remove leading/trailing spaces
-  return replaced.trim();
+  const flattened = flatten(prerequisiteClause);
+  return flattened;
 }
 
 /**

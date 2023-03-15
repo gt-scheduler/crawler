@@ -1,4 +1,5 @@
 import asyncPool from "tiny-async-pool";
+
 import {
   download,
   list,
@@ -8,8 +9,9 @@ import {
   attachPrereqs,
   write,
   parseCourseDescription,
-  parseCoursePrereqs,
   writeIndex,
+  parseCoursePrereqs,
+  downloadCoursePrereqDetails,
 } from "./steps";
 import { Prerequisites } from "./types";
 import {
@@ -254,8 +256,9 @@ async function crawlCourseDetails(
   [htmlLength: number, prereqs: Prerequisites | [], descriptions: string | null]
 > {
   const detailsHtml = await downloadCourseDetails(term, courseId);
-  const prereqs = await parseCoursePrereqs(detailsHtml, courseId);
-  const description = parseCourseDescription(detailsHtml, courseId);
+  const description = await parseCourseDescription(detailsHtml, courseId);
+  const prereqHtml = await downloadCoursePrereqDetails(term, courseId);
+  const prereqs = await parseCoursePrereqs(prereqHtml, courseId);
   return [detailsHtml.length, prereqs, description];
 }
 

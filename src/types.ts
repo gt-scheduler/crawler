@@ -72,6 +72,11 @@ export interface Caches {
    * Example time: 11:20 am - 2:10 pm
    */
   finalTimes: string[];
+  /**
+   * List of the full names of courses
+   * Example name: Accounting for ACCT
+   * */
+  // fullCourseNames: { [key: string]: string };
 }
 
 /**
@@ -203,7 +208,7 @@ export type Meeting = [
   finalTimeIdx: number
 ];
 
-export type MinimumGrade = "A" | "B" | "C" | "D" | "T";
+export type MinimumGrade = "A" | "B" | "C" | "D" | "T" | "S" | "U" | "V";
 export type PrerequisiteCourse = { id: string; grade?: MinimumGrade };
 export type PrerequisiteClause = PrerequisiteCourse | PrerequisiteSet;
 export type PrerequisiteOperator = "and" | "or";
@@ -295,11 +300,21 @@ export type SectionResponse = {
   isSectionLinked: boolean;
   subjectCourse: string;
   faculty: FacultyResponse[];
+  meetingsFaculty: MeetingsFacultyResponse[];
   reservedSeatSummary: unknown;
-  sectionAttributes: unknown;
+  sectionAttributes: SectionAttributeResponse[];
   instructionalMethod: unknown;
   instructionalMethodDescription: unknown;
 };
+
+export interface SectionAttributeResponse {
+  class: string;
+  code: string;
+  courseReferenceNumber: string;
+  description: string;
+  isZTCAttribute: boolean;
+  termCode: string;
+}
 
 export interface FacultyResponse {
   bannerId: string;
@@ -308,7 +323,7 @@ export interface FacultyResponse {
   courseReferenceNumber: string;
   displayName: string;
   emailAddress: string;
-  primaryIndiciator: boolean;
+  primaryIndicator: boolean;
   term: string;
 }
 

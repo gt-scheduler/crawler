@@ -1,14 +1,16 @@
-// Generated from src/steps/prereqs/grammar/Prerequisites.g4 by ANTLR 4.7.3-SNAPSHOT
+// Generated from src/steps/prereqs/grammar/Prerequisites.g4 by ANTLR 4.9.0-SNAPSHOT
 
 
 import { ParseTreeListener } from "antlr4ts/tree/ParseTreeListener";
 
 import { ParseContext } from "./PrerequisitesParser";
+import { EmptyContext } from "./PrerequisitesParser";
 import { ExpressionContext } from "./PrerequisitesParser";
 import { TermContext } from "./PrerequisitesParser";
 import { AtomContext } from "./PrerequisitesParser";
 import { CourseContext } from "./PrerequisitesParser";
 import { TestContext } from "./PrerequisitesParser";
+import { OperatorContext } from "./PrerequisitesParser";
 
 
 /**
@@ -26,6 +28,17 @@ export interface PrerequisitesListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	exitParse?: (ctx: ParseContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `PrerequisitesParser.empty`.
+	 * @param ctx the parse tree
+	 */
+	enterEmpty?: (ctx: EmptyContext) => void;
+	/**
+	 * Exit a parse tree produced by `PrerequisitesParser.empty`.
+	 * @param ctx the parse tree
+	 */
+	exitEmpty?: (ctx: EmptyContext) => void;
 
 	/**
 	 * Enter a parse tree produced by `PrerequisitesParser.expression`.
@@ -81,5 +94,16 @@ export interface PrerequisitesListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	exitTest?: (ctx: TestContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `PrerequisitesParser.operator`.
+	 * @param ctx the parse tree
+	 */
+	enterOperator?: (ctx: OperatorContext) => void;
+	/**
+	 * Exit a parse tree produced by `PrerequisitesParser.operator`.
+	 * @param ctx the parse tree
+	 */
+	exitOperator?: (ctx: OperatorContext) => void;
 }
 

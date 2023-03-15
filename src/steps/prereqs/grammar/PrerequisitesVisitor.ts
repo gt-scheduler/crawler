@@ -1,14 +1,16 @@
-// Generated from src/steps/prereqs/grammar/Prerequisites.g4 by ANTLR 4.7.3-SNAPSHOT
+// Generated from src/steps/prereqs/grammar/Prerequisites.g4 by ANTLR 4.9.0-SNAPSHOT
 
 
 import { ParseTreeVisitor } from "antlr4ts/tree/ParseTreeVisitor";
 
 import { ParseContext } from "./PrerequisitesParser";
+import { EmptyContext } from "./PrerequisitesParser";
 import { ExpressionContext } from "./PrerequisitesParser";
 import { TermContext } from "./PrerequisitesParser";
 import { AtomContext } from "./PrerequisitesParser";
 import { CourseContext } from "./PrerequisitesParser";
 import { TestContext } from "./PrerequisitesParser";
+import { OperatorContext } from "./PrerequisitesParser";
 
 
 /**
@@ -25,6 +27,13 @@ export interface PrerequisitesVisitor<Result> extends ParseTreeVisitor<Result> {
 	 * @return the visitor result
 	 */
 	visitParse?: (ctx: ParseContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by `PrerequisitesParser.empty`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitEmpty?: (ctx: EmptyContext) => Result;
 
 	/**
 	 * Visit a parse tree produced by `PrerequisitesParser.expression`.
@@ -60,5 +69,12 @@ export interface PrerequisitesVisitor<Result> extends ParseTreeVisitor<Result> {
 	 * @return the visitor result
 	 */
 	visitTest?: (ctx: TestContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by `PrerequisitesParser.operator`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitOperator?: (ctx: OperatorContext) => Result;
 }
 
