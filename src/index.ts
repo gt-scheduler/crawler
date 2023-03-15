@@ -73,7 +73,7 @@ async function main(): Promise<void> {
 }
 
 async function crawl(): Promise<void> {
-  let termsToScrape = await span(
+  const termsToScrape = await span(
     `listing all terms`,
     {},
     async (setFinishFields) => {
@@ -164,8 +164,6 @@ async function crawl(): Promise<void> {
       return toScrape;
     }
   );
-
-  termsToScrape = ["202102", "202008"];
 
   // Scrape each term in parallel
   await Promise.all(
