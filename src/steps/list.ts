@@ -1,7 +1,6 @@
 import axios from "axios";
 import { getIntConfig } from "../utils";
 
-const PADDING = 4;
 const NUM_TERMS = getIntConfig("NUM_TERMS") ?? 2;
 
 export type TermData = {
@@ -10,7 +9,7 @@ export type TermData = {
 };
 
 export async function list(): Promise<string[]> {
-  const queryNum = NUM_TERMS + PADDING;
+  const queryNum = 3 * NUM_TERMS + 10;
 
   const response = await axios.post<TermData[]>(
     `https://registration.banner.gatech.edu/StudentRegistrationSsb/ssb/classSearch/getTerms?searchTerm=&offset=1&max=${queryNum}`
