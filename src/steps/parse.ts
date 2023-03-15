@@ -180,6 +180,11 @@ export function parse(sections: SectionResponse[], version: number): TermData {
         `${meetingPart.meetingTime.startDate} - ${meetingPart.meetingTime.endDate}`
       );
       const locationIndex = cache(caches.locations, location || null);
+      const building =
+        meetingPart.meetingTime.buildingDescription === null &&
+        meetingPart.meetingTime.building === null
+          ? "TBA"
+          : `${meetingPart.meetingTime.buildingDescription} ${meetingPart.meetingTime.building}`;
 
       // Set to -1 here and to be updated by Revise.py later
       const finalDateIndex = -1;
@@ -194,7 +199,7 @@ export function parse(sections: SectionResponse[], version: number): TermData {
           (meetingPart.meetingTime.friday ? "F" : "") +
           (meetingPart.meetingTime.saturday ? "S" : "") +
           (meetingPart.meetingTime.sunday ? "U" : ""),
-        `${meetingPart.meetingTime.buildingDescription} ${meetingPart.meetingTime.building}`,
+        building,
         locationIndex,
         instructors,
         dateRangeIndex,
