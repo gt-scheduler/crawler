@@ -5,3 +5,4 @@ data
 .antlr
 *.log
 .vscode
+*/__pycache__

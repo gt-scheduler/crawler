@@ -23,6 +23,22 @@ class Parser:
     # Date format
     def setDateFormat(self, string: str):
         self.dateFormat = string
+    
+    def convertTimeGroup(self, time_group: str) -> str:
+        """
+        Converts a time group to a 24-hour format
+        eg: "10:20am - 2:50pm" -> "1020 - 1450"
+        """
+        matching_groups = re.findall(r"((\d{1,2}):(\d{2}) (a|p)m)", time_group)
+        if matching_groups == None or len(matching_groups) != 2: return "TBA"
+        converted_times = []
+        for time in matching_groups:
+            if len(time) != 4: return "TBA"
+            [_, hour, minute, ampm] = time
+            new_hour = str(int(hour) % 12 + (12 if ampm == 'p' else 0))
+            new_hour = new_hour if len(new_hour) == 2 else f"0{new_hour}"
+            converted_times.append(f"{new_hour}{minute}")
+        return " - ".join(converted_times)
 
     def parseBlock(self, block: pd.DataFrame) -> pd.DataFrame:
         """
@@ -51,7 +67,8 @@ class Parser:
         def time (n: re.Match):
             nonlocal sectionTime
             if sectionTime: return ""
-            sectionTime = n.group().lower()
+            group = n.group().lower()
+            sectionTime = self.convertTimeGroup(group)
             return ""
 
         for index, row in block.iterrows():
@@ -60,6 +77,7 @@ class Parser:
                 row[1] = dateSearch.sub(date, row[1])
                 row[1] = timeSearch.sub(time, row[1])
                 row[1] = hyphen.sub(" - ", row[1].lower())
+                row[1] = self.convertTimeGroup(row[1])
             except:
                 print(block)
                 print()
@@ -112,7 +130,7 @@ class Parser:
         df.columns=df.iloc[0, :]
         df.drop(inplace=True, index=0)
         df = df[['Course', 'Date', 'Time']]
-        df['Time'] = df['Time'].str.lower()
+        df['Time'] = df['Time'].str.lower().apply(self.convertTimeGroup)
         df = df.loc[df['Course'] != "None"]
 
         # Change date format from day, month date

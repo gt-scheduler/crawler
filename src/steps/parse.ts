@@ -173,7 +173,9 @@ export function parse(sections: SectionResponse[], version: number): TermData {
       );
       const periodIndex = cache(
         caches.periods,
-        `${meetingPart.meetingTime.beginTime} - ${meetingPart.meetingTime.endTime}`
+        meetingPart.meetingTime.beginTime && meetingPart.meetingTime.endTime
+          ? `${meetingPart.meetingTime.beginTime} - ${meetingPart.meetingTime.endTime}`
+          : "TBA"
       );
       const dateRangeIndex = cache(
         caches.dateRanges,
@@ -181,10 +183,10 @@ export function parse(sections: SectionResponse[], version: number): TermData {
       );
       const locationIndex = cache(caches.locations, location || null);
       const building =
-        meetingPart.meetingTime.buildingDescription === null &&
-        meetingPart.meetingTime.building === null
-          ? "TBA"
-          : `${meetingPart.meetingTime.buildingDescription} ${meetingPart.meetingTime.building}`;
+        meetingPart.meetingTime.buildingDescription &&
+        meetingPart.meetingTime.building
+          ? `${meetingPart.meetingTime.buildingDescription} ${meetingPart.meetingTime.building}`
+          : "TBA";
 
       // Set to -1 here and to be updated by Revise.py later
       const finalDateIndex = -1;
