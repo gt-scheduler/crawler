@@ -28,8 +28,12 @@ import { getIntConfig } from "./utils";
 // Current scraped JSON version
 const CURRENT_VERSION = 3;
 
+// Manually set a term for crawling.
+// This will ignore NUM_TERMS
+const SPECIFIED_TERM = process.env.TERM;
+
 // Number of terms to scrape (scrapes most recent `NUM_TERMS`)
-const NUM_TERMS = getIntConfig("NUM_TERMS") ?? 2;
+const NUM_TERMS = SPECIFIED_TERM ? 1 : getIntConfig("NUM_TERMS") ?? 2;
 
 // Whether to always scrape the current term, even if it's not in the
 // most recent `NUM_TERMS` terms.
@@ -78,8 +82,18 @@ async function crawl(): Promise<void> {
     {},
     async (setFinishFields) => {
       const terms = await list();
-      const recentTerms = terms.slice(0, NUM_TERMS);
-      let toScrape = recentTerms;
+
+      let toScrape;
+      // If no term is manually set, scrape the most recent terms
+      if (SPECIFIED_TERM) {
+        if (!terms.includes(SPECIFIED_TERM))
+          throw new Error("The manually set term is invalid");
+
+        toScrape = [SPECIFIED_TERM];
+      } else {
+        const recentTerms = terms.slice(0, NUM_TERMS);
+        toScrape = recentTerms;
+      }
 
       if (ALWAYS_SCRAPE_CURRENT_TERM) {
         // Make sure that, in addition to the most-recent terms,
@@ -144,12 +158,12 @@ async function crawl(): Promise<void> {
           });
         } else {
           const [matchingTerm] = matchingTerms;
-          const alreadyInRecentTerms = recentTerms.includes(matchingTerm);
-          if (!alreadyInRecentTerms) {
-            toScrape = [matchingTerm, ...recentTerms];
+          const alreadyInToScrape = toScrape.includes(matchingTerm);
+          if (!alreadyInToScrape) {
+            toScrape = [matchingTerm, ...toScrape];
           }
           setFinishFields({
-            addedCurrentTerm: !alreadyInRecentTerms,
+            addedCurrentTerm: !alreadyInToScrape,
             currentTerm: matchingTerm,
           });
         }
@@ -158,7 +172,6 @@ async function crawl(): Promise<void> {
       setFinishFields({
         terms,
         termsToScrape: toScrape,
-        recentTerms,
         desiredNumTerms: NUM_TERMS,
       });
       return toScrape;
