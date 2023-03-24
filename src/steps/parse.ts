@@ -123,10 +123,22 @@ export function parse(sections: SectionResponse[], version: number): TermData {
       courseTitle,
       courseReferenceNumber,
       sequenceNumber,
-      creditHours: credits,
+      // creditHours: credits,
       campusDescription: campus,
       subjectCourse,
     } = section;
+
+    let credits = section.creditHours;
+
+    // The number of credit hours maybe missing.
+    // If the number of credits is null or 0, search within each meeting time for a non-zero value;
+    // otherwise, default to 0
+    if (!credits) {
+      credits =
+        section.meetingsFaculty.find(
+          (meetingPart) => meetingPart.meetingTime.creditHourSession > 0
+        )?.meetingTime.creditHourSession ?? 0;
+    }
 
     const courseName = `${section.subject} ${subjectCourse.replace(
       section.subject,
@@ -145,8 +157,6 @@ export function parse(sections: SectionResponse[], version: number): TermData {
     const attributeIndices = attributes.map((attr) =>
       cache(caches.attributes, attr)
     );
-
-    // caches.fullCourseNames[section.subjectDescription] = section.subject;
 
     const meetings: Meeting[] = section.meetingsFaculty.map((meetingPart) => {
       // convert string location to latitude, longitude coordinates
