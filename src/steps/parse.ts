@@ -194,8 +194,8 @@ export function parse(sections: SectionResponse[], version: number): TermData {
       const locationIndex = cache(caches.locations, location || null);
       const building =
         meetingPart.meetingTime.buildingDescription &&
-        meetingPart.meetingTime.building
-          ? `${meetingPart.meetingTime.buildingDescription} ${meetingPart.meetingTime.building}`
+        meetingPart.meetingTime.room
+          ? `${meetingPart.meetingTime.buildingDescription} ${meetingPart.meetingTime.room}`
           : "TBA";
 
       // Set to -1 here and to be updated by Revise.py later
