@@ -6,6 +6,8 @@ on:
         description: 'Choose a term to scrape'
         type: string
         required: true
+concurrency:
+  group: crawling
 
 jobs:
   crawling:

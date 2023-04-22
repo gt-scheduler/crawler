@@ -5,6 +5,8 @@ on:
       - main
   schedule:
     - cron: "*/30 * * * *"
+concurrency:
+  group: crawling
 
 jobs:
   crawling:
