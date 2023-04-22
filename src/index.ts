@@ -28,12 +28,14 @@ import { getIntConfig } from "./utils";
 // Current scraped JSON version
 const CURRENT_VERSION = 3;
 
-// Manually set a term for crawling.
+// Manually set the list of terms for crawling.
 // This will ignore NUM_TERMS
-const SPECIFIED_TERM = process.env.TERM;
+const SPECIFIED_TERMS = process.env.TERM?.split(",").map((term) => term.trim());
 
 // Number of terms to scrape (scrapes most recent `NUM_TERMS`)
-const NUM_TERMS = SPECIFIED_TERM ? 1 : getIntConfig("NUM_TERMS") ?? 2;
+const NUM_TERMS = SPECIFIED_TERMS
+  ? SPECIFIED_TERMS.length
+  : getIntConfig("NUM_TERMS") ?? 2;
 
 // Whether to always scrape the current term, even if it's not in the
 // most recent `NUM_TERMS` terms.
@@ -85,11 +87,11 @@ async function crawl(): Promise<void> {
 
       let toScrape;
       // If no term is manually set, scrape the most recent terms
-      if (SPECIFIED_TERM) {
-        if (!terms.includes(SPECIFIED_TERM))
+      if (SPECIFIED_TERMS) {
+        if (SPECIFIED_TERMS.some((term) => !terms.includes(term)))
           throw new Error("The manually set term is invalid");
 
-        toScrape = [SPECIFIED_TERM];
+        toScrape = SPECIFIED_TERMS;
       } else {
         const recentTerms = terms.slice(0, NUM_TERMS);
         toScrape = recentTerms;

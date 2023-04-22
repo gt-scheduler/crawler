@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
     inputs:
       term:
-        description: 'Choose a term to scrape'
+        description: 'Enter terms to scrape, separated by commas'
         type: string
         required: true
 concurrency:
