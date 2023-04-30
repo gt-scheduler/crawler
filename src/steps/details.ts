@@ -33,20 +33,28 @@ export async function downloadCourseDetails(
   // (sometimes, we get rate limits/transport errors so this tries to mitigates them)
   const maxAttemptCount = 10;
   try {
-    const response = await backOff(() => axios.get<string>(url), {
-      // See https://github.com/coveooss/exponential-backoff for options API
-      jitter: "full",
-      numOfAttempts: maxAttemptCount,
-      retry: (err, attemptNumber) => {
-        error(`an error occurred while fetching details`, err, {
-          courseId,
-          url,
-          attemptNumber,
-          tryingAgain: attemptNumber < maxAttemptCount,
-        });
-        return true;
-      },
-    });
+    const response = await backOff(
+      () =>
+        axios.get<string>(url, {
+          headers: {
+            "User-Agent": "gt-scheduler/crawler",
+          },
+        }),
+      {
+        // See https://github.com/coveooss/exponential-backoff for options API
+        jitter: "full",
+        numOfAttempts: maxAttemptCount,
+        retry: (err, attemptNumber) => {
+          error(`an error occurred while fetching details`, err, {
+            courseId,
+            url,
+            attemptNumber,
+            tryingAgain: attemptNumber < maxAttemptCount,
+          });
+          return true;
+        },
+      }
+    );
     return response.data;
   } catch (err) {
     error(`exhausted retries for fetching details`, err, { courseId });
@@ -82,20 +90,28 @@ export async function downloadCoursePrereqDetails(
   // (sometimes, we get rate limits/transport errors so this tries to mitigates them)
   const maxAttemptCount = 10;
   try {
-    const response = await backOff(() => axios.get<string>(url), {
-      // See https://github.com/coveooss/exponential-backoff for options API
-      jitter: "full",
-      numOfAttempts: maxAttemptCount,
-      retry: (err, attemptNumber) => {
-        error(`an error occurred while fetching details`, err, {
-          courseId,
-          url,
-          attemptNumber,
-          tryingAgain: attemptNumber < maxAttemptCount,
-        });
-        return true;
-      },
-    });
+    const response = await backOff(
+      () =>
+        axios.get<string>(url, {
+          headers: {
+            "User-Agent": "gt-scheduler/crawler",
+          },
+        }),
+      {
+        // See https://github.com/coveooss/exponential-backoff for options API
+        jitter: "full",
+        numOfAttempts: maxAttemptCount,
+        retry: (err, attemptNumber) => {
+          error(`an error occurred while fetching details`, err, {
+            courseId,
+            url,
+            attemptNumber,
+            tryingAgain: attemptNumber < maxAttemptCount,
+          });
+          return true;
+        },
+      }
+    );
     return response.data;
   } catch (err) {
     error(`exhausted retries for fetching prereqs`, err, { courseId });
