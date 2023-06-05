@@ -54,7 +54,7 @@ export async function generateSearchSessionCookies(
       () =>
         axios
           .get(
-            "https://registration.banner.gatech.edu/StudentRegistrationSsb/ssb/classSearch/getTerms?searchTerm=&offset=0&max=1",
+            "https://registration.banner.gatech.edu/StudentRegistrationSsb",
             {
               headers: {
                 "User-Agent": "gt-scheduler/crawler",
