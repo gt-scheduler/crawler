@@ -30,12 +30,15 @@ const CURRENT_VERSION = 3;
 
 // Manually set the list of terms for crawling.
 // This will ignore NUM_TERMS
-const SPECIFIED_TERMS = process.env.TERM?.split(",").map((term) => term.trim());
+const SPECIFIED_TERMS = process.env.SPECIFIED_TERMS?.split(",").map((term) =>
+  term.trim()
+);
 
 // Number of terms to scrape (scrapes most recent `NUM_TERMS`)
 const NUM_TERMS = SPECIFIED_TERMS
   ? SPECIFIED_TERMS.length
   : getIntConfig("NUM_TERMS") ?? 2;
+// const NUM_TERMS = getIntConfig("NUM_TERMS") ?? 2;
 
 // Whether to always scrape the current term, even if it's not in the
 // most recent `NUM_TERMS` terms.

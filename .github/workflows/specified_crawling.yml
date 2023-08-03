@@ -43,7 +43,7 @@ jobs:
         env:
           LOG_FORMAT: json
           NUM_TERMS: 1
-          TERM: ${{ inputs.term }}
+          SPECIFIED_TERM: ${{ inputs.term }}
           ALWAYS_SCRAPE_CURRENT_TERM: 0
           DETAILS_CONCURRENCY: 256
           DATA_FOLDER: ./data
