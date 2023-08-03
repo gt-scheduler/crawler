@@ -12,7 +12,7 @@ export async function list(): Promise<string[]> {
   const queryNum = 3 * NUM_TERMS + 10;
 
   const response = await axios.post<TermData[]>(
-    `https://registration.banner.gatech.edu/StudentRegistrationSsb/ssb/classSearch/getTerms?searchTerm=&offset=1&max=${queryNum}`
+    `https://registration.banner.gatech.edu/StudentRegistrationSsb/ssb/courseSearch/getTerms?searchTerm=&offset=1&max=${queryNum}`
   );
   const { data } = response;
 
