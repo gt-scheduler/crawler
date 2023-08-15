@@ -2,7 +2,7 @@
 
 > A periodic web crawler to feed course data into [GT Scheduler](https://bitsofgood.org/scheduler).
 
-Sample: [202008.json](https://gt-scheduler.github.io/crawler/202008.json)
+Sample: [202302.json](https://gt-scheduler.github.io/crawler-v2/202302.json)
 
 To report a bug or request a new feature, please [create a new Issue in the GT Scheduler website repository](https://github.com/gt-scheduler/website/issues/new/choose).
 
@@ -93,7 +93,7 @@ The Registrar publishes a PDF with the Finals schedule at the start of each seme
 The page with the PDF for the Fall 2022 semester can be found [here](https://registrar.gatech.edu/info/final-exam-matrix-fall-2022)
 
 The `matrix.json` file contains a mapping from term to the pdf file.
-<br>The key is one of the terms identified by the scraper [here](https://gt-scheduler.github.io/crawler/index.json).
+<br>The key is one of the terms identified by the scraper [here](https://gt-scheduler.github.io/crawler-v2/index.json).
 <br>The value is the direct address for the PDF file such as [this](https://registrar.gatech.edu/files/202208%20Final%20Exam%20Matrix.pdf)
 
 This mapping needs to be updated each semester when a new schedule is posted
