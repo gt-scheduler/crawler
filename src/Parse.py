@@ -50,7 +50,7 @@ class Parser:
         sectionDate = ""
         sectionTime = ""
         dateSearch = re.compile(r"\w+,\s\w+\s\d+")
-        timeSearch = re.compile(r"\d+:\d\d\s[PA]M\s*‐\s*\d+:\d\d [PA]M")
+        timeSearch = re.compile(r"\d+:\d\d\s[PA]M\s*(‐|-)\s*\d+:\d\d [PA]M")
         hyphen = re.compile(r"(?<=[ap]m)\s(?=\d)")
 
         def date (n: re.Match):
@@ -99,7 +99,7 @@ class Parser:
         Return a list of columns to parse in the format
         [start_column, end_column, end_row]
         """
-        titleSearch = re.compile(r"\d+:\d\d [AP]M\s+‐\s+\d+:\d\d\s[AP]M\sExams")
+        titleSearch = re.compile(r"\d+:\d\d [AP]M\s+(‐|-)\s+\d+:\d\d\s[AP]M\sExams")
         idxs = []
         for idx, column in enumerate(block.columns):
             if titleSearch.match(column):
