@@ -2,8 +2,10 @@
   "name": "gt-schedule-crawler",
   "version": "1.0.0",
   "scripts": {
-    "start": "ts-node src",
-    "start-logged": "logfile=\"$(date --iso-8601=seconds).log\"; echo \"Logging to '$logfile'\"; LOG_FORMAT=json ts-node src > \"$logfile\" 2>&1; echo 'Done'",
+    "start": "export NODE_EXTRA_CA_CERTS=\"$PWD/intermediate.pem\" && ts-node src",
+    "start-logged": "export NODE_EXTRA_CA_CERTS=\"$PWD/intermediate.pem\" && logfile=\"$(date --iso-8601=seconds).log\"; echo \"Logging to '$logfile'\"; LOG_FORMAT=json ts-node src > \"$logfile\" 2>&1; echo 'Done'",
+    "start:windows": "set NODE_EXTRA_CA_CERTS=%cd%/intermediate.pem && ts-node src",
+    "start-logged:windows": "set NODE_EXTRA_CA_CERTS=%cd%/intermediate.pem && logfile=\"$(date --iso-8601=seconds).log\"; echo \"Logging to '$logfile'\"; LOG_FORMAT=json ts-node src > \"$logfile\" 2>&1; echo 'Done'",
     "gen-parser": "antlr4ts -visitor src/steps/prereqs/grammar/Prerequisites.g4",
     "typecheck": "tsc --noEmit",
     "lint": "eslint \"src/**/*.ts\" --ignore-pattern \"src/steps/prereqs/grammar/**/*\"",
