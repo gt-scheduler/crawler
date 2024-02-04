@@ -221,10 +221,9 @@ export function parse(sections: SectionResponse[], version: number): TermData {
     });
 
     if (!(courseName in courses)) {
-      const title = courseTitle;
       const sectionsMap: Record<string, Section> = {};
       courses[courseName] = [
-        title,
+        courseTitle,
         sectionsMap,
         // Start off with an empty prerequisites array
         [],
@@ -241,6 +240,9 @@ export function parse(sections: SectionResponse[], version: number): TermData {
       campusIndex,
       attributeIndices,
       -1,
+      courseTitle,
+      // Start off with empty course prerequisities
+      [],
     ];
   });
 

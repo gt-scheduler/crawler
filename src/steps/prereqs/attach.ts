@@ -1,5 +1,6 @@
 import { warn } from "../../log";
 import { TermData, Prerequisites } from "../../types";
+import { splitCourseId } from "../details";
 
 /**
  * Attaches course prerequisites to the data for the current term in-place
@@ -14,10 +15,25 @@ export function attachPrereqs(
   // For each parsed prerequisite,
   // attach it to the corresponding course
   // (mutate in-place)
-  Object.keys(prerequisites).forEach((courseId) => {
-    if (courseId in termData.courses) {
+  Object.keys(prerequisites).forEach((courseIdTemp) => {
+    const splitCourse = splitCourseId(courseIdTemp);
+    if (!splitCourse) return;
+    const courseId = splitCourse.slice(0, 2).join(" ");
+    const crn = splitCourse?.[2];
+
+    if (!crn && courseId in termData.courses) {
       // eslint-disable-next-line no-param-reassign
       termData.courses[courseId][2] = prerequisites[courseId];
+    } else if (crn && courseId in termData.courses) {
+      // Populates section prerequisites by matching CRNs
+      Object.keys(termData.courses[courseId][1]).forEach((section) => {
+        if (termData.courses[courseId][1][section][0] === crn) {
+          /* eslint-disable no-param-reassign */
+          termData.courses[courseId][1][section][8] = prerequisites[courseId];
+        }
+      });
+
+      // [...][8] = prerequisites[courseId]
     } else {
       warn(`received prerequisite data for unknown course`, { courseId });
     }

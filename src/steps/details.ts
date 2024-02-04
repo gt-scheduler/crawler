@@ -77,11 +77,12 @@ export async function downloadCoursePrereqDetails(
     return "";
   }
 
-  const [subject, number] = splitResult;
+  const [subject, number, crn] = splitResult;
   const parameters = {
     term,
     subjectCode: subject,
     courseNumber: number,
+    ...(crn && { courseReferenceNumber: crn }),
   };
   const query = `?${concatParams(parameters)}`;
   const url = `https://registration.banner.gatech.edu/StudentRegistrationSsb/ssb/courseSearchResults/getPrerequisites${query}`;
@@ -123,10 +124,14 @@ export async function downloadCoursePrereqDetails(
  * Attempts to split a course ID into its subject/number components
  * @param courseId - The joined course id (SUBJECT NUMBER); i.e. `"CS 2340"`
  */
-function splitCourseId(
+export function splitCourseId(
   courseId: string
-): [subject: string, number: string] | null {
-  const splitResult = courseId.split(" ");
-  if (splitResult.length !== 2) return null;
-  return [splitResult[0], splitResult[1]];
+): [subject: string, number: string, crn?: string] | null {
+  const splitResult = courseId?.split(" ");
+  // 'ECON 4803 <123456>' is valid due to sections potentially having different titles or prerequisites
+  // Number within arrow brackets signifies CRN as an additional course identifier
+  const crnTemp = splitResult?.[2].match(/<(.+)>/);
+  const crn = crnTemp?.[0];
+  if (splitResult.length !== 2 && !crnTemp) return null;
+  return [splitResult[0], splitResult[1], crn];
 }

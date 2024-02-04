@@ -115,6 +115,9 @@ export type Course = [
    * Description pulled from Oscar
    */
   description: string | null
+  /**
+   *
+   */
 ];
 
 /**
@@ -153,7 +156,29 @@ export type Section = [
    * integer index into caches.gradeBases,
    * specifying the grading scheme of the class
    */
-  gradeBaseIndex: number
+  gradeBaseIndex: number,
+  /**
+   * string representing section-specific course name
+   */
+  fullName: string,
+  /**
+     * a tree of section-specific prerequisite classes and the necessary grades in them
+     * (using boolean expressions in prefix order)
+     *
+     * @example
+     *
+     * ```json
+       [
+         "and",
+         [
+            "or",
+            {"id":"CS 3510", "grade":"C"},
+            {"id":"CS 3511", "grade":"C"}
+         ]
+       ]
+     * ```
+     */
+  prerequisites: Prerequisites
 ];
 
 /**
