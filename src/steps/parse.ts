@@ -115,6 +115,8 @@ export function parse(sections: SectionResponse[], version: number): TermData {
     // fullCourseNames: {},
   };
 
+  const pseudoCourses: string[] = [];
+
   const updatedAt = new Date();
   const missingLocations = new Set<string>();
 
@@ -177,8 +179,10 @@ export function parse(sections: SectionResponse[], version: number): TermData {
       }
 
       const instructors = section.faculty.map(
+        // Occassionally, the code errors while processing split() in the function below
+        // displayName is sometimes null, but appears correctly on later scripte executions
         (faculty) =>
-          faculty.displayName.split(", ").reverse().join(" ") +
+          faculty.displayName?.split(", ").reverse().join(" ") +
           (faculty.primaryIndicator ? " (P)" : "")
       );
       const periodIndex = cache(
@@ -244,6 +248,13 @@ export function parse(sections: SectionResponse[], version: number): TermData {
       // Start off with empty course prerequisities
       [],
     ];
+
+    // Check if parsed section possibly has unique prerequisites
+    // This appears to primarily only happen to 3-letter section numbers, e.g. ECON 4803 PM1 and GD1
+    // These sections will be stored as pseudo-courses with CRNs included for prerequisite attaching
+    if (sequenceNumber.length > 1) {
+      pseudoCourses.push(`${courseName} <${courseReferenceNumber}>`);
+    }
   });
 
   if (missingLocations.size > 0) {
@@ -254,5 +265,7 @@ export function parse(sections: SectionResponse[], version: number): TermData {
     });
   }
 
-  return { courses, caches, updatedAt, version };
+  const combinedCourseIds = Object.keys(courses).concat(pseudoCourses);
+
+  return { courses, caches, updatedAt, version, combinedCourseIds };
 }

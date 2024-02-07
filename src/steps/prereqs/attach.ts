@@ -25,11 +25,12 @@ export function attachPrereqs(
       // eslint-disable-next-line no-param-reassign
       termData.courses[courseId][2] = prerequisites[courseId];
     } else if (crn && courseId in termData.courses) {
-      // Populates section prerequisites by matching CRNs
+      // Populates section prerequisites by matching CRNs to find the correct section to attach to
       Object.keys(termData.courses[courseId][1]).forEach((section) => {
         if (termData.courses[courseId][1][section][0] === crn) {
           /* eslint-disable no-param-reassign */
-          termData.courses[courseId][1][section][8] = prerequisites[courseId];
+          termData.courses[courseId][1][section][8] =
+            prerequisites[courseIdTemp];
         }
       });
 

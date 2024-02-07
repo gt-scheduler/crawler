@@ -218,7 +218,9 @@ async function crawlTerm(
     parse(sections, CURRENT_VERSION)
   );
 
-  const allCourseIds = Object.keys(termData.courses);
+  // const allCourseIds = Object.keys(termData.courses);
+  const allCourseIds = termData.combinedCourseIds;
+
   const courseIdCount = allCourseIds.length;
   spanFields = { ...spanFields, courseIdCount };
   log(`collected all course ids`, { allCourseIds, ...spanFields });

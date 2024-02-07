@@ -22,6 +22,11 @@ export interface TermData {
    * Version number for the term data
    */
   version: number;
+  /**
+   * Contains all course IDs that require parsing, including pseudo-courses (sections)
+   * that contain prerequisites different from the other course sections
+   */
+  combinedCourseIds: string[];
 }
 
 /**
