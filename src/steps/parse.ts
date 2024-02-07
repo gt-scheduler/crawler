@@ -180,7 +180,7 @@ export function parse(sections: SectionResponse[], version: number): TermData {
 
       const instructors = section.faculty.map(
         // Occassionally, the code errors while processing split() in the function below
-        // displayName is sometimes null, but appears correctly on later scripte executions
+        // displayName is sometimes null, but appears correctly on later script executions
         (faculty) =>
           faculty.displayName?.split(", ").reverse().join(" ") +
           (faculty.primaryIndicator ? " (P)" : "")

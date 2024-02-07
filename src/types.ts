@@ -120,9 +120,6 @@ export type Course = [
    * Description pulled from Oscar
    */
   description: string | null
-  /**
-   *
-   */
 ];
 
 /**
