@@ -44,6 +44,8 @@ class Parser:
         """
         Parse a single time block
         """
+        print(block)
+        print('--------')
         block.columns = ["Days", "Time"]
         # Tabula combines the Start Time, End Time, and Exam Date/Time columns
         # Requires regex to split them apart
@@ -89,6 +91,7 @@ class Parser:
 
         # Go back and add the first row's time
         block['finalTime'].iloc[0] = block['finalTime'].iloc[1]
+
         return block
 
     def getColumns(self, block: pd.DataFrame) -> List[List[int]]:
@@ -99,18 +102,22 @@ class Parser:
         Return a list of columns to parse in the format
         [start_column, end_column, end_row]
         """
-        titleSearch = re.compile(r"\d+:\d\d [AP]M\s+(‐|-)\s+\d+:\d\d\s[AP]M\sExams")
-        idxs = []
-        for idx, column in enumerate(block.columns):
-            if titleSearch.match(column):
-                if idx == len(block.columns)-1: idxs.append([idx-1, idx])
-                elif "Exam Date/Time" in block.iloc[0, idx+1]:
-                    # Check if tabula created an extra column
-                    idxs.append([idx-1, idx+1])
-                else: idxs.append([idx-1, idx])
-                na = block[block.iloc[:, idxs[-1][0]+1].isna()]
-                idxs[-1].append(na.index[0] if not na.empty else len(block))
-        return idxs
+
+        if self.year < 2024:
+          titleSearch = re.compile(r"\d+:\d\d [AP]M\s+(‐|-)\s+\d+:\d\d\s[AP]M\sExams")
+          idxs = []
+          for idx, column in enumerate(block.columns):
+              if titleSearch.match(column):
+                  if idx == len(block.columns)-1: idxs.append([idx-1, idx])
+                  elif "Exam Date/Time" in block.iloc[0, idx+1]:
+                      # Check if tabula created an extra column
+                      idxs.append([idx-1, idx+1])
+                  else: idxs.append([idx-1, idx])
+                  na = block[block.iloc[:, idxs[-1][0]+1].isna()]
+                  idxs[-1].append(na.index[0] if not na.empty else len(block))
+          return idxs
+        else:
+          return 
 
     def parseCommon(self):
         """
@@ -167,6 +174,9 @@ class Parser:
         """
         self.year = int(file[0:4])
         print(f"Parsing file: {file}")
+        
+
+        # TODO: CHANGE PATH BEFORE COMMITTING
         with open(Path("./src/matrix.json").resolve().absolute()) as f:
             locations = json.load(f)
         if file in locations:
@@ -179,27 +189,39 @@ class Parser:
         schedule = pd.DataFrame()
         sections = set() # Keep track of time blocks already parsed
         for chunk in self.read:
-            # Tabula breaks the file up into separate chunks,
-            # some containing multiple time slots
-            columns = self.getColumns(chunk)
-            for start, end, terminate in columns:
+            if self.year >= 2024:
+              if "Reading and Conflict Periods" in chunk.columns or "Common Exams" in chunk.columns:
+                continue
+              
+              schedule = pd.concat([schedule, self.parse2024block(chunk)], axis=0, join="outer")
+            else:
+                
+              # Tabula breaks the file up into separate chunks,
+              # some containing multiple time slots
+              columns = self.getColumns(chunk)
+              # print(chunk.columns)
+              
+              
+              for start, end, terminate in columns:
                 df = chunk.iloc[:terminate, start:end+1]
 
                 # Fix case where tabula breaks the columns incorrectly
                 if len(df.columns) == 3:
-                    df.iloc[:, 1] = df.iloc[:, 1:].fillna("").agg(" ".join, axis=1).apply(str.strip)
-                    df = df.iloc[:, :-1]
+                  df.iloc[:, 1] = df.iloc[:, 1:].fillna("").agg(" ".join, axis=1).apply(str.strip)
+                  df = df.iloc[:, :-1]
 
                 if df.columns[1] not in sections:
-                    sections.add(df.columns[1])
-                    print("Parsing: {}".format(df.columns[1]))
-                    block = df.drop(index=0).iloc[:, :2].copy()
-                    block.columns = block.iloc[0]
-                    schedule = pd.concat([schedule, self.parseBlock(block)], axis=0, join="outer")
+                  sections.add(df.columns[1])
+                  print("Parsing: {}".format(df.columns[1]))
+                  block = df.drop(index=0).iloc[:, :2].copy()
+                  block.columns = block.iloc[0]
+                  schedule = pd.concat([schedule, self.parseBlock(block)], axis=0, join="outer")
 
-        schedule = schedule.apply(lambda x: x.str.strip()).apply(lambda x: x.str.replace("‐", "-"))
-        schedule.set_index(['Days', 'Time'], inplace=True)
-        self.schedule = schedule
+
+
+            schedule = schedule.apply(lambda x: x.str.strip()).apply(lambda x: x.str.replace("‐", "-"))
+            schedule.set_index(['Days', 'Time'], inplace=True)
+            self.schedule = schedule
 
     def export(self, title="Finals Schedule"):
         """
@@ -209,3 +231,75 @@ class Parser:
             self.schedule.to_csv("./data/{}.csv".format(title))
         else:
             print("Schedule has not been parsed")
+
+    def parse2024block(self, block):
+      if "Reading and Conflict Periods" in block.columns or "Common Exams" in block.columns:
+        return
+      
+      titleSearch = re.compile(r"\d+:\d\d [AP]M\s+(‐|-)\s+\d+:\d\d\s[AP]M\sExams")
+
+      for c in block.columns:
+          if titleSearch.match(c) or c == "Reading and Conflict Periods" or c == "Common Exams":
+              break
+      else:
+          name = block.iloc[0, 0]
+          block.columns = [name, None]
+          block = block.drop(index=[0])
+          block = block.reset_index(drop=True)
+
+      block = block.drop(index=0)
+      block = block.reset_index(drop=True)
+
+      block.columns = ["Days", "Time"]
+
+      sectionDate = ""
+      sectionTime = ""
+      dateSearch = re.compile(r"\w+,\s\w+\s\d+")
+      timeSearch = re.compile(r"\d+:\d\d\s[PA]M\s*(‐|-)\s*\d+:\d\d [PA]M")
+
+      def split_schedule(schedule):
+        pattern = r'([A-Za-z]+)(\d{1,2}:\d{2} [AP]M)(\d{1,2}:\d{2} [AP]M)'
+        matches = re.match(pattern, schedule)
+        if matches:
+            days = matches.group(1)
+            start_time = matches.group(2)
+            end_time = matches.group(3)
+            return days, start_time, end_time
+        else:
+            return None, None, None
+        
+      def date (n: re.Match):
+        nonlocal sectionDate
+        try:
+            date = datetime.strptime(n.group(), "%A, %b %d")
+        except ValueError:
+            # Full month name was used
+            date = datetime.strptime(n.group(), "%A, %B %d")
+        date = date.replace(year=self.year)
+        sectionDate = date.strftime(self.dateFormat)
+        return ""
+      
+      def time (n: re.Match):
+        nonlocal sectionTime
+        if sectionTime: return ""
+        group = n.group().lower()
+        sectionTime = self.convertTimeGroup(group)
+        return ""
+  
+      for index, row in block.iterrows(): 
+        days, start_time, end_time = split_schedule(row[0])
+        if not pd.isna(row[1]):
+          row[1] = dateSearch.sub(date, row[1])
+          row[1] = timeSearch.sub(time, row[1])
+
+        block.loc[index, 'finalDate'] = sectionDate
+        block.loc[index, 'finalTime'] = sectionTime
+        block.loc[index, 'Days'] = days
+        block.loc[index, 'Time'] = self.convertTimeGroup(f"{start_time.lower()} - {end_time.lower()}")
+        
+      return block
+
+p = Parser()
+
+p.parseFile("202402")
+
