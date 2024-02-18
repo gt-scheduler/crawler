@@ -50,6 +50,7 @@ class Revise:
             parser.parseCommon()
             parser.export("{}_Finals".format(file.stem))
             self.schedule = parser.schedule
+            # print(self.schedule)
             self.common = parser.common
             self.process()
         print("Finished all files")

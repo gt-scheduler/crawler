@@ -16,3 +16,4 @@ setuptools==63.4.1
 six==1.16.0
 tabula-py==2.3.0
 wheel==0.37.1
+PyPDF2==3.0.1

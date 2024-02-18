@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 # coding: utf-8
-
 import tabula
 import re
 import numpy as np
@@ -9,6 +8,8 @@ from datetime import datetime
 import json
 from pathlib import Path
 from typing import *
+import PyPDF2
+import requests
 
 # More documentation available: https://github.com/gt-scheduler/crawler/wiki/Finals-Scraping#revise
 
@@ -44,8 +45,6 @@ class Parser:
         """
         Parse a single time block
         """
-        print(block)
-        print('--------')
         block.columns = ["Days", "Time"]
         # Tabula combines the Start Time, End Time, and Exam Date/Time columns
         # Requires regex to split them apart
@@ -91,7 +90,7 @@ class Parser:
 
         # Go back and add the first row's time
         block['finalTime'].iloc[0] = block['finalTime'].iloc[1]
-
+        # print(block)
         return block
 
     def getColumns(self, block: pd.DataFrame) -> List[List[int]]:
@@ -133,10 +132,31 @@ class Parser:
             # Find the chunk with the common exams
             if "Common Exams" in chunk.columns: df=chunk.copy()
         if df is None: return None
+
+        if self.year >= 2024:
+          df.columns = ['Course', 'Date']
+          df.drop(inplace=True, index=0)
+          for index, row in df.iterrows(): 
+              match = re.match(r'(None|.+?)([A-z]{3,5}, \w{3} \d{1,2})', row[0])
+              if match:
+                  df.loc[index, 'Course'] =  match.group(1)
+                  df.loc[index, 'Time'] = row[1]
+                  df.loc[index, 'Date'] = match.group(2)
+
+        else:
         # Cut to size
-        df.columns=df.iloc[0, :]
-        df.drop(inplace=True, index=0)
+          df.columns=df.iloc[0, :]
+          df.drop(inplace=True, index=0)
+
+        def strip_carriage_return(s):
+          return s.replace('\r', '')
+        
         df = df[['Course', 'Date', 'Time']]
+
+        df['Course'] = df['Course'].apply(strip_carriage_return)
+        df['Date'] = df['Date'].apply(strip_carriage_return)
+        df['Time'] = df['Time'].apply(strip_carriage_return)
+
         df['Time'] = df['Time'].str.lower().apply(self.convertTimeGroup)
         df = df.loc[df['Course'] != "None"]
 
@@ -167,61 +187,90 @@ class Parser:
         df = df.apply(lambda x: x.str.strip()).apply(lambda x: x.str.replace("‐", "-"))
         self.common = df
 
+    def parseCommon2024(self):
+      pass
+
     def parseFile(self, file="202208"):
-        """
-        Parse a single file into `self.schedule`, a Pandas DataFrame
-        Takes a single parameter which is a key in matrix.json
-        """
-        self.year = int(file[0:4])
-        print(f"Parsing file: {file}")
-        
+      """
+      Parse a single file into `self.schedule`, a Pandas DataFrame
+      Takes a single parameter which is a key in matrix.json
+      """
+      self.year = int(file[0:4])
 
-        # TODO: CHANGE PATH BEFORE COMMITTING
-        with open(Path("./src/matrix.json").resolve().absolute()) as f:
-            locations = json.load(f)
-        if file in locations:
-            file = locations[file] # address for the PDF
+      def crop_pdf(input_path, output_path, left, bottom, right, top):
+        with open(input_path, 'rb') as file:
+          reader = PyPDF2.PdfReader(file)
+          writer = PyPDF2.PdfWriter()
+
+          for page_num in range(len(reader.pages)):
+              page = reader.pages[page_num]
+              page.mediabox.lower_left = (left, bottom)
+              page.mediabox.upper_right = (right, top)
+              writer.add_page(page)
+
+          with open(output_path, 'wb') as output_file:
+              writer.write(output_file)
+      
+      print(f"Parsing file: {file}")
+
+      # TODO: CHANGE PATH BEFORE COMMITTING
+      with open(Path("./src/matrix.json").resolve().absolute()) as f:
+          locations = json.load(f)
+      if file in locations:
+          url = locations[file] # address for the PDF
+      else:
+          print("File was not found")
+          return None
+
+      # crop the pdf if it's from 2024 or later
+      if self.year >= 2024:
+        response = requests.get(url)
+        with open(f"downloaded_{file}.pdf", 'wb') as f:
+          f.write(response.content)
+
+
+        # coordinates in pdf point system
+        top = 16.4 * 72
+        left = 0 * 72
+        bottom = 1 * 72
+        right = 11 * 72
+
+        crop_pdf(f"downloaded_{file}.pdf", f"cropped_{file}.pdf", left, bottom, right, top)
+        self.read = tabula.read_pdf(f"cropped_{file}.pdf", pages=1)
+      else:
+        self.read = tabula.read_pdf(url, pages=1)
+
+      
+      schedule = pd.DataFrame()
+      sections = set() # Keep track of time blocks already parsed
+      for chunk in self.read:
+        if self.year >= 2024:
+          if "Reading and Conflict Periods" in chunk.columns or "Common Exams" in chunk.columns:
+            print(chunk)
+            continue
+          
+          schedule = pd.concat([schedule, self.parse2024block(chunk)], axis=0, join="outer")
         else:
-            print("File was not found")
-            return None
+          # Tabula breaks the file up into separate chunks,
+          # some containing multiple time slots
+          columns = self.getColumns(chunk)
+          for start, end, terminate in columns:
+            df = chunk.iloc[:terminate, start:end+1]
 
-        self.read = tabula.read_pdf(file, pages=1)
-        schedule = pd.DataFrame()
-        sections = set() # Keep track of time blocks already parsed
-        for chunk in self.read:
-            if self.year >= 2024:
-              if "Reading and Conflict Periods" in chunk.columns or "Common Exams" in chunk.columns:
-                continue
-              
-              schedule = pd.concat([schedule, self.parse2024block(chunk)], axis=0, join="outer")
-            else:
-                
-              # Tabula breaks the file up into separate chunks,
-              # some containing multiple time slots
-              columns = self.getColumns(chunk)
-              # print(chunk.columns)
-              
-              
-              for start, end, terminate in columns:
-                df = chunk.iloc[:terminate, start:end+1]
+            # Fix case where tabula breaks the columns incorrectly
+            if len(df.columns) == 3:
+              df.iloc[:, 1] = df.iloc[:, 1:].fillna("").agg(" ".join, axis=1).apply(str.strip)
+              df = df.iloc[:, :-1]
 
-                # Fix case where tabula breaks the columns incorrectly
-                if len(df.columns) == 3:
-                  df.iloc[:, 1] = df.iloc[:, 1:].fillna("").agg(" ".join, axis=1).apply(str.strip)
-                  df = df.iloc[:, :-1]
-
-                if df.columns[1] not in sections:
-                  sections.add(df.columns[1])
-                  print("Parsing: {}".format(df.columns[1]))
-                  block = df.drop(index=0).iloc[:, :2].copy()
-                  block.columns = block.iloc[0]
-                  schedule = pd.concat([schedule, self.parseBlock(block)], axis=0, join="outer")
-
-
-
-            schedule = schedule.apply(lambda x: x.str.strip()).apply(lambda x: x.str.replace("‐", "-"))
-            schedule.set_index(['Days', 'Time'], inplace=True)
-            self.schedule = schedule
+            if df.columns[1] not in sections:
+              sections.add(df.columns[1])
+              print("Parsing: {}".format(df.columns[1]))
+              block = df.drop(index=0).iloc[:, :2].copy()
+              block.columns = block.iloc[0]
+              schedule = pd.concat([schedule, self.parseBlock(block)], axis=0, join="outer")
+      schedule = schedule.apply(lambda x: x.str.strip()).apply(lambda x: x.str.replace("‐", "-"))
+      schedule.set_index(['Days', 'Time'], inplace=True)
+      self.schedule = schedule
 
     def export(self, title="Finals Schedule"):
         """
@@ -233,19 +282,14 @@ class Parser:
             print("Schedule has not been parsed")
 
     def parse2024block(self, block):
-      if "Reading and Conflict Periods" in block.columns or "Common Exams" in block.columns:
-        return
-      
       titleSearch = re.compile(r"\d+:\d\d [AP]M\s+(‐|-)\s+\d+:\d\d\s[AP]M\sExams")
 
       for c in block.columns:
-          if titleSearch.match(c) or c == "Reading and Conflict Periods" or c == "Common Exams":
-              break
+        if titleSearch.match(c):
+            break
       else:
-          name = block.iloc[0, 0]
-          block.columns = [name, None]
-          block = block.drop(index=[0])
-          block = block.reset_index(drop=True)
+        block = block.drop(index=[0])
+        block = block.reset_index(drop=True)
 
       block = block.drop(index=0)
       block = block.reset_index(drop=True)
@@ -296,10 +340,10 @@ class Parser:
         block.loc[index, 'finalTime'] = sectionTime
         block.loc[index, 'Days'] = days
         block.loc[index, 'Time'] = self.convertTimeGroup(f"{start_time.lower()} - {end_time.lower()}")
-        
+
       return block
 
-p = Parser()
+# p = Parser()
 
-p.parseFile("202402")
-
+# p.parseFile("202402")
+# p.parseCommon()
