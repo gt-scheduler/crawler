@@ -90,11 +90,11 @@ More information can be found [here](https://github.com/gt-scheduler/crawler/wik
 #### Updating the list of finals PDFs
 
 The Registrar publishes a PDF with the Finals schedule at the start of each semester.
-The page with the PDF for the Fall 2022 semester can be found [here](https://registrar.gatech.edu/info/final-exam-matrix-fall-2022)
+The page with the PDFs for current semesters can be found [here](https://registrar.gatech.edu/info/final-exam-matrices)
 
 The `matrix.json` file contains a mapping from term to the pdf file.
 <br>The key is one of the terms identified by the scraper [here](https://gt-scheduler.github.io/crawler/index.json).
-<br>The value is the direct address for the PDF file such as [this](https://registrar.gatech.edu/files/202208%20Final%20Exam%20Matrix.pdf)
+<br>The value is the direct address for the PDF file such as [this](https://registrar.gatech.edu/files/202408%20Final%20Exam%20Matrix.pdf)
 
 This mapping needs to be updated each semester when a new schedule is posted
 
