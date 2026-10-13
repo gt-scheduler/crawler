@@ -1,18 +1,42 @@
 import axios from "axios";
-import { extract } from "../utils";
+import { getIntConfig } from "../utils";
 
-export async function list(): Promise<string[]> {
-  const response = await axios.post<string>(
-    "https://oscar.gatech.edu/pls/bprod/bwckctlg.p_disp_dyn_ctlg"
+const NUM_TERMS = getIntConfig("NUM_TERMS") ?? 2;
+
+export type TermData = {
+  code: string;
+  description: string;
+};
+
+export async function list(): Promise<[string[], string[]]> {
+  const queryNum = 3 * NUM_TERMS + 10;
+
+  const response = await axios.post<TermData[]>(
+    `https://registration.banner.gatech.edu/StudentRegistrationSsb/ssb/courseSearch/getTerms?searchTerm=&offset=1&max=${queryNum}`
   );
-  const { data } = response;
-  const terms = extract(
-    data,
-    /<OPTION VALUE="(\d+)">/g,
-    (execArray) => execArray[1]
+  const responseFinalized = await axios.post<TermData[]>(
+    `https://registration.banner.gatech.edu/StudentRegistrationSsb/ssb/classSearch/getTerms?searchTerm=&offset=1&max=${queryNum}`
   );
-  return terms.filter((term) => {
-    const month = Number(term.slice(4));
-    return month >= 1 && month <= 12;
-  });
+
+  const terms = response.data.map((term) => term.code);
+  const termsFinalized = responseFinalized.data.map((term) => term.code);
+
+  // merge both endpoints
+  const allTerms = Array.from(new Set([...terms, ...termsFinalized]));
+
+  const results = allTerms
+    .filter((term) => {
+      const month = Number(term.slice(4));
+      return month >= 1 && month <= 12;
+    })
+    .sort()
+    .reverse();
+
+  console.log(`Found ${results.length} terms: ${results.join(", ")}`);
+  console.log(
+    `Found ${termsFinalized.length} finalized terms: ${termsFinalized.join(
+      ", "
+    )}`
+  );
+  return [results, termsFinalized];
 }

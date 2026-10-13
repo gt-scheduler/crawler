@@ -7,15 +7,20 @@ grammar Prerequisites;
 parse
     : expression // an input can contain either a set (multiple clauses joined with operators)
     | atom       // or a single clause
+    | empty      // or an empty clause with standalone operators and parentheses
     | EOF
     ;
 
+empty
+    : OPARENS* operator+ empty* CPARENS*
+    ;
+
 expression
-    : left=term ( OR right=term)*
+    : left=term ( OR (right=term)*)*
     ;
    
 term
-    : left=atom (AND right=atom)*
+    : operator* left=atom (AND (right=atom)*)*
     ;
 
 atom
@@ -33,6 +38,9 @@ test
     : name=TEST_NAME score=COURSE_NUMBER
     ;
 
+operator
+    : (AND|OR)
+    ;
 
 // Lexer rules
 AND : 'and';
@@ -42,7 +50,7 @@ CPARENS : ')';
 
 GRADE_LETTER
     : 'A'..'D'
-    | 'T'
+    | 'S'..'V'
     ;
 
 COURSE_PREFIX

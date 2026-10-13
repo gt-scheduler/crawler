@@ -5,6 +5,8 @@ on:
       - main
   schedule:
     - cron: "*/30 * * * *"
+concurrency:
+  group: crawling
 
 jobs:
   crawling:
@@ -24,12 +26,12 @@ jobs:
 
       - name: Install
         run: yarn install --frozen-lockfile
-        
+
       - name: Pip
         uses: actions/setup-python@v4
         with:
-          python-version: '3.9'
-          cache: 'pip' # caching pip dependencies
+          python-version: "3.9"
+          cache: "pip" # caching pip dependencies
 
       - name: Pip Install
         run: pip install -r requirements.txt
@@ -38,11 +40,12 @@ jobs:
         run: yarn start
         env:
           LOG_FORMAT: json
-          NUM_TERMS: 2
+          NUM_TERMS: 3
           ALWAYS_SCRAPE_CURRENT_TERM: 1
           DETAILS_CONCURRENCY: 256
           DATA_FOLDER: ./data
-          
+          NODE_EXTRA_CA_CERTS: ${{ github.workspace }}/intermediate.pem
+
       - name: Revision
         run: python ./src/Revise.py
 

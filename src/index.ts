@@ -1,4 +1,5 @@
 import asyncPool from "tiny-async-pool";
+
 import {
   download,
   list,
@@ -8,10 +9,15 @@ import {
   attachPrereqs,
   write,
   parseCourseDescription,
-  parseCoursePrereqs,
   writeIndex,
+  parseCoursePrereqs,
+  downloadCoursePrereqDetails,
+  downloadSectionRestrictions,
+  parseSectionRestrictions,
+  attachSectionRestrictions,
+  downloadCourseCoreqDetails,
 } from "./steps";
-import { Prerequisites } from "./types";
+import { Corequisites, Prerequisites, FetchedRestrictions } from "./types";
 import {
   setLogFormat,
   isLogFormat,
@@ -22,12 +28,23 @@ import {
   getLogFormat,
 } from "./log";
 import { getIntConfig } from "./utils";
+import { parseCourseCoreqs } from "./steps/coreqs/parse";
+import { attachCoreqs } from "./steps/coreqs/attach";
 
 // Current scraped JSON version
 const CURRENT_VERSION = 3;
 
+// Manually set the list of terms for crawling.
+// This will ignore NUM_TERMS
+const SPECIFIED_TERMS = process.env.SPECIFIED_TERMS?.split(",").map((term) =>
+  term.trim()
+);
+
 // Number of terms to scrape (scrapes most recent `NUM_TERMS`)
-const NUM_TERMS = getIntConfig("NUM_TERMS") ?? 2;
+const NUM_TERMS = SPECIFIED_TERMS
+  ? SPECIFIED_TERMS.length
+  : getIntConfig("NUM_TERMS") ?? 2;
+// const NUM_TERMS = getIntConfig("NUM_TERMS") ?? 2;
 
 // Whether to always scrape the current term, even if it's not in the
 // most recent `NUM_TERMS` terms.
@@ -71,13 +88,30 @@ async function main(): Promise<void> {
 }
 
 async function crawl(): Promise<void> {
-  const termsToScrape = await span(
+  const results: [string[], string[]] = await span(
     `listing all terms`,
     {},
-    async (setFinishFields) => {
-      const terms = await list();
-      const recentTerms = terms.slice(0, NUM_TERMS);
-      let toScrape = recentTerms;
+    async (setFinishFields): Promise<[string[], string[]]> => {
+      const lists = await list();
+      const terms = lists[0];
+      const termInfo = lists[1];
+      let toScrape: string[] = [];
+      // If no term is manually set, scrape the most recent terms
+      // Replace the old check with this one:
+      if (SPECIFIED_TERMS) {
+        // Check if the term exists in EITHER the general list OR the finalized list
+        const isValid = SPECIFIED_TERMS.every(
+          (term) => terms.includes(term) || termInfo.includes(term)
+        );
+
+        if (!isValid) {
+          throw new Error("The manually set term is invalid");
+        }
+
+        toScrape = SPECIFIED_TERMS;
+      } else {
+        toScrape = terms.slice(0, NUM_TERMS);
+      }
 
       if (ALWAYS_SCRAPE_CURRENT_TERM) {
         // Make sure that, in addition to the most-recent terms,
@@ -142,12 +176,12 @@ async function crawl(): Promise<void> {
           });
         } else {
           const [matchingTerm] = matchingTerms;
-          const alreadyInRecentTerms = recentTerms.includes(matchingTerm);
-          if (!alreadyInRecentTerms) {
-            toScrape = [matchingTerm, ...recentTerms];
+          const alreadyInToScrape = toScrape.includes(matchingTerm);
+          if (!alreadyInToScrape) {
+            toScrape = [matchingTerm, ...toScrape];
           }
           setFinishFields({
-            addedCurrentTerm: !alreadyInRecentTerms,
+            addedCurrentTerm: !alreadyInToScrape,
             currentTerm: matchingTerm,
           });
         }
@@ -156,12 +190,13 @@ async function crawl(): Promise<void> {
       setFinishFields({
         terms,
         termsToScrape: toScrape,
-        recentTerms,
         desiredNumTerms: NUM_TERMS,
       });
-      return toScrape;
+      return [toScrape, termInfo];
     }
   );
+  const termsToScrape: string[] = results[0];
+  const termInfo = results[1];
 
   // Scrape each term in parallel
   await Promise.all(
@@ -179,7 +214,7 @@ async function crawl(): Promise<void> {
   );
 
   // Output a JSON file containing all of the scraped term files
-  await writeIndex();
+  await writeIndex(termInfo);
 }
 
 async function crawlTerm(
@@ -189,11 +224,13 @@ async function crawlTerm(
   // Alias the parameter so we can modify it
   let spanFields = baseSpanFields;
 
-  // Download the term HTML page containing every course.
-  const html = await span(`downloading term`, spanFields, () => download(term));
+  // Download the term JSON containing every course.
+  const sections = await span(`downloading term`, spanFields, () =>
+    download(term, DETAILS_CONCURRENCY)
+  );
 
   const termData = await span(`parsing term data to JSON`, spanFields, () =>
-    parse(html, CURRENT_VERSION)
+    parse(sections, CURRENT_VERSION)
   );
 
   const allCourseIds = Object.keys(termData.courses);
@@ -202,32 +239,32 @@ async function crawlTerm(
   log(`collected all course ids`, { allCourseIds, ...spanFields });
 
   const allPrereqs: Record<string, Prerequisites | []> = {};
+  const allCoreqs: Record<string, Corequisites> = {};
   const allDescriptions: Record<string, string | null> = {};
   await span(
     `downloading & parsing prerequisite info & course descriptions`,
     { ...spanFields, concurrency: DETAILS_CONCURRENCY },
     async () =>
       asyncPool(DETAILS_CONCURRENCY, allCourseIds, async (courseId) => {
-        const [coursePrereqs, courseDescription] = await span(
+        const [coursePrereqs, courseCoreqs, courseDescription] = await span(
           `crawling individual course`,
           {
             ...spanFields,
             courseId,
           },
           async (setCompletionFields) => {
-            const [htmlLength, prereqs, description] = await crawlCourseDetails(
-              term,
-              courseId
-            );
+            const [htmlLength, prereqs, coreqs, description] =
+              await crawlCourseDetails(term, courseId);
             setCompletionFields({
               htmlLength,
               hasDescription: description != null,
             });
-            return [prereqs, description];
+            return [prereqs, coreqs, description];
           }
         );
 
         allPrereqs[courseId] = coursePrereqs;
+        allCoreqs[courseId] = courseCoreqs;
         allDescriptions[courseId] = courseDescription;
       })
   );
@@ -240,6 +277,56 @@ async function crawlTerm(
     attachDescriptions(termData, allDescriptions)
   );
 
+  await span(`attaching coreq information`, spanFields, () =>
+    attachCoreqs(termData, allCoreqs)
+  );
+
+  // Crawl section restrictions
+  const allRestrictions: Record<string, FetchedRestrictions> = {};
+  await span(
+    `downloading & parsing section restrictions`,
+    { ...spanFields, concurrency: DETAILS_CONCURRENCY },
+    async () => {
+      // Collect all CRNs from all sections
+      const allCrns: string[] = [];
+      for (const courseData of Object.values(termData.courses)) {
+        const sectionsMap = courseData[1];
+        for (const sectionData of Object.values(sectionsMap)) {
+          allCrns.push(sectionData[0]); // CRN is first element
+        }
+      }
+
+      await asyncPool(DETAILS_CONCURRENCY, allCrns, async (crn) => {
+        await span(
+          `crawling section restrictions`,
+          { ...spanFields, crn },
+          async (setCompletionFields) => {
+            const [html, downloadSuccess] = await downloadSectionRestrictions(
+              term,
+              crn
+            );
+            const parsed = parseSectionRestrictions(
+              html,
+              crn,
+              downloadSuccess,
+              termData.caches
+            );
+            allRestrictions[crn] = parsed;
+            setCompletionFields({
+              htmlLength: html.length,
+              hasRestrictions: parsed.restrictions.length > 0,
+              status: parsed.status,
+            });
+          }
+        );
+      });
+    }
+  );
+
+  await span(`attaching section restrictions`, spanFields, () =>
+    attachSectionRestrictions(termData, allRestrictions)
+  );
+
   await span(`writing scraped data to disk`, spanFields, () =>
     write(term, termData)
   );
@@ -249,12 +336,20 @@ async function crawlCourseDetails(
   term: string,
   courseId: string
 ): Promise<
-  [htmlLength: number, prereqs: Prerequisites | [], descriptions: string | null]
+  [
+    htmlLength: number,
+    prereqs: Prerequisites | [],
+    coreqs: Corequisites,
+    descriptions: string | null
+  ]
 > {
   const detailsHtml = await downloadCourseDetails(term, courseId);
-  const prereqs = await parseCoursePrereqs(detailsHtml, courseId);
-  const description = parseCourseDescription(detailsHtml, courseId);
-  return [detailsHtml.length, prereqs, description];
+  const description = await parseCourseDescription(detailsHtml, courseId);
+  const prereqHtml = await downloadCoursePrereqDetails(term, courseId);
+  const prereqs = await parseCoursePrereqs(prereqHtml, courseId);
+  const coreqHtml = await downloadCourseCoreqDetails(term, courseId);
+  const coreqs = await parseCourseCoreqs(coreqHtml, courseId);
+  return [detailsHtml.length, prereqs, coreqs, description];
 }
 
 main();
