@@ -72,6 +72,17 @@ export interface Caches {
    * Example time: 11:20 am - 2:10 pm
    */
   finalTimes: string[];
+  /**
+   * List of the full names of courses
+   * Example name: Accounting for ACCT
+   * */
+  // fullCourseNames: { [key: string]: string };
+  /** List of restrictions on a course (e.g. `"Campus"`, or `"Level"`) */
+  restrictions: string[];
+  /** * A dedicated object to hold the dynamically discovered restriction values.
+   * Keys are the category names (e.g., "campuses"), values are the arrays of strings.
+   */
+  restrictionValues: Record<string, string[]>;
 }
 
 /**
@@ -109,7 +120,8 @@ export type Course = [
   /**
    * Description pulled from Oscar
    */
-  description: string | null
+  description: string | null,
+  corequisites: Corequisites
 ];
 
 /**
@@ -148,7 +160,17 @@ export type Section = [
    * integer index into caches.gradeBases,
    * specifying the grading scheme of the class
    */
-  gradeBaseIndex: number
+  gradeBaseIndex: number,
+  /**
+   * the section-specific title of the course (e.g. "Animal Interaction"),
+   * we need this when there are classes with multiple sections with different titles
+   * e.g. 8803, 4803 etc
+   */
+  sectionTitle: string,
+  /**
+   * restriction information for this section with status
+   */
+  restrictionData: SectionRestrictions
 ];
 
 /**
@@ -203,7 +225,7 @@ export type Meeting = [
   finalTimeIdx: number
 ];
 
-export type MinimumGrade = "A" | "B" | "C" | "D" | "T";
+export type MinimumGrade = "A" | "B" | "C" | "D" | "T" | "S" | "U" | "V";
 export type PrerequisiteCourse = { id: string; grade?: MinimumGrade };
 export type PrerequisiteClause = PrerequisiteCourse | PrerequisiteSet;
 export type PrerequisiteOperator = "and" | "or";
@@ -211,6 +233,63 @@ export type PrerequisiteSet = [
   operator: PrerequisiteOperator,
   ...clauses: PrerequisiteClause[]
 ];
+
+/**
+ * One restriction rule for a section
+ */
+export type Restriction = [
+  /**
+   * integer index into `caches.restriction`
+   * specifying the category (e.g. Campus, Level)
+   */
+  categoryIndex: number,
+  /**
+   * integer index into the corresponding category's cache
+   * (e.g., caches.campuses, caches.levels)
+   */
+  valueIndex: number
+];
+
+/**
+ * Supported restriction categories
+ */
+export type RestrictionCategory =
+  | "College"
+  | "Campus"
+  | "Major"
+  | "Level"
+  | "Class"
+  | "Degree"
+  | "Program";
+
+/**
+ * Status of restriction data for a section
+ */
+export type RestrictionStatus = "success" | "parse-error" | "fetch-error";
+
+export type SectionRestrictions =
+  | [allowed: Restriction[], disallowed: Restriction[]]
+  | [];
+
+/**
+ * Complete restriction information for a section
+ */
+export interface FetchedRestrictions {
+  /**
+   * Tuple separating restrictions by allowance:
+   * Index 0: Array of ALLOWED restrictions
+   * Index 1: Array of DISALLOWED restrictions
+   * (Can be an empty array [] if there are no restrictions)
+   */
+  restrictions: SectionRestrictions;
+  /**
+   * Status of the restriction data fetch/parse
+   * - "success": Successfully fetched and parsed (restrictions may be empty)
+   * - "parse-error": Downloaded but failed to parse
+   * - "fetch-error": Failed to download from server
+   */
+  status: RestrictionStatus;
+}
 
 /**
  * Location information about the building where a class takes place
@@ -244,3 +323,124 @@ export class Location {
  * ```
  */
 export type Prerequisites = PrerequisiteSet | [];
+
+export type Corequisites = { id: string }[];
+
+export type BannerResponse = {
+  success: boolean;
+  totalCount: number;
+  data: SectionResponse[] | null;
+  pageOffset: number;
+  pageMaxSize: number;
+  sectionsFetchedCount: 0;
+  pathMode: string | null;
+  searchResultsConfigs: SearchResultsConfigResponse[] | null;
+  ztcEncodedImage: string | null;
+};
+
+export type SearchResultsConfigResponse = {
+  config: string;
+  display: string;
+  title: string;
+  required: boolean;
+  width: string;
+};
+
+export type SectionResponse = {
+  id: number;
+  term: string;
+  termDesc: string;
+  courseReferenceNumber: string;
+  partOfTerm: string;
+  subject: string;
+  subjectDescription: string;
+  sequenceNumber: string;
+  campusDescription: string;
+  scheduleTypeDescription: string;
+  courseTitle: string;
+  creditHours: number;
+  maximumEnrollment: number;
+  enrollment: number;
+  seatsAvailable: number;
+  waitCapacity: number;
+  waitCount: number;
+  crossList: unknown;
+  crossListCapacity: unknown;
+  crossListCount: unknown;
+  crossListAvailable: unknown;
+  creditHourHigh: number;
+  creditHourLow: number;
+  creditHourIndicator: unknown;
+  openSection: boolean;
+  linkIdentifier: unknown;
+  isSectionLinked: boolean;
+  subjectCourse: string;
+  faculty: FacultyResponse[];
+  meetingsFaculty: MeetingsFacultyResponse[];
+  reservedSeatSummary: unknown;
+  sectionAttributes: SectionAttributeResponse[];
+  instructionalMethod: unknown;
+  instructionalMethodDescription: unknown;
+};
+
+export interface SectionAttributeResponse {
+  class: string;
+  code: string;
+  courseReferenceNumber: string;
+  description: string;
+  isZTCAttribute: boolean;
+  termCode: string;
+}
+
+export interface FacultyResponse {
+  bannerId: string;
+  category: unknown;
+  class: string;
+  courseReferenceNumber: string;
+  displayName: string;
+  emailAddress: string;
+  primaryIndicator: boolean;
+  term: string;
+}
+
+export interface MeetingsFacultyResponse {
+  category: string;
+  class: string;
+  courseReferenceNumber: string;
+  faculty: FacultyResponse[];
+  meetingTime: MeetingsResponse;
+  term: string;
+}
+
+export interface MeetingsResponse {
+  beginTime: string;
+  building: string;
+  buildingDescription: string;
+  campus: string;
+  campusDescription: string;
+  category: string;
+  class: string;
+  courseReferenceNumber: string;
+  creditHourSession: number;
+  endDate: string;
+  endTime: string;
+  friday: boolean;
+  hoursWeek: number;
+  meetingScheduleType: string;
+  meetingType: string;
+  meetingTypeDescription: string;
+  monday: boolean;
+  room: string;
+  saturday: boolean;
+  startDate: string;
+  sunday: boolean;
+  term: string;
+  thursday: boolean;
+  tuesday: boolean;
+  wednesday: boolean;
+}
+
+export interface Term {
+  term: string;
+  finalized: boolean;
+}

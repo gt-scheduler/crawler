@@ -4,8 +4,9 @@ import fs from "fs/promises";
 import { writeFile } from "../utils";
 import { dataPath } from "./write";
 import { log } from "../log";
+import { Term } from "../types";
 
-export async function writeIndex(): Promise<void> {
+export async function writeIndex(termsFinalized: string[]): Promise<void> {
   // Find all term JSON files in the data directory
   const files = await fs.readdir(dataPath);
   const dataFileRegex = /20[0-9]{4}.json/;
@@ -19,10 +20,24 @@ export async function writeIndex(): Promise<void> {
     dataPath,
   });
 
+  const termsInfo: Term[] = [];
+
+  allTerms.forEach((element) => {
+    const curr: Term = {
+      term: element,
+      finalized: false,
+    };
+    if (termsFinalized.includes(element)) {
+      curr.finalized = true;
+    }
+    termsInfo.push(curr);
+  });
+
   // Write the list of terms out to `index.json`
   const jsonData = {
-    terms: allTerms,
+    terms: termsInfo,
   };
+
   const termPath = path.resolve(dataPath, `index.json`);
   return writeFile(termPath, jsonData);
 }

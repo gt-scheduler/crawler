@@ -8,3 +8,5 @@ export * from "./prereqs/parse";
 export * from "./prereqs/attach";
 export * from "./descriptions/parse";
 export * from "./descriptions/attach";
+export * from "./restrictions/parse";
+export * from "./restrictions/attach";
